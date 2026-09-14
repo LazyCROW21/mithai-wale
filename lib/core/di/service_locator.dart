@@ -20,6 +20,8 @@ library;
 import 'package:get_it/get_it.dart';
 
 import '../database/db_provider.dart';
+import '../database/repositories/category_repository.dart';
+import '../database/repositories/menu_repository.dart';
 import '../database/repositories/settings_repository.dart';
 
 /// Global service locator instance.
@@ -27,26 +29,16 @@ import '../database/repositories/settings_repository.dart';
 final GetIt sl = GetIt.instance;
 
 /// Registers all application-level dependencies.
-///
-/// Repositories are registered as [lazySingleton] — created on first access
-/// and reused thereafter. This keeps startup fast.
-///
-/// Add new registrations in the section that matches the dependency kind:
-///
-/// ```dart
-/// // Repositories
-/// sl.registerLazySingleton<IProductsRepository>(() => DriftProductsRepository(sl()));
-///
-/// // Services
-/// sl.registerLazySingleton<AuthService>(() => AuthService(sl()));
-///
-/// // ViewModels (factories — new instance per feature mount)
-/// sl.registerFactory<ProductsViewModel>(() => ProductsViewModel(sl(), sl()));
-/// ```
 Future<void> setupServiceLocator() async {
   // ── Repositories ─────────────────────────────────────────────────────────
   sl.registerLazySingleton<ISettingsRepository>(
     () => DatabaseProvider.instance.settings,
+  );
+  sl.registerLazySingleton<ICategoryRepository>(
+    () => DatabaseProvider.instance.categories,
+  );
+  sl.registerLazySingleton<IMenuRepository>(
+    () => DatabaseProvider.instance.menu,
   );
 
   // ── Services ──────────────────────────────────────────────────────────────

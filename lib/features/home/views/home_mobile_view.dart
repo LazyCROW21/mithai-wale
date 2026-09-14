@@ -1,23 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/routing/routes.dart';
 import '../../../core/routing/router_key.dart';
+import '../../../core/routing/routes.dart';
 import '../home_providers.dart';
 
-/// Mobile layout for the Home feature.
-///
-/// Reads [homeViewModelProvider] for all state — no local [StatefulWidget]
-/// state for business logic. Local ephemeral state (scroll controllers,
-/// animation controllers) may still live in [ConsumerStatefulWidget].
 class HomeMobileView extends ConsumerWidget {
   const HomeMobileView({super.key});
 
   static const _navItems = [
-    NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-    NavigationDestination(icon: Icon(Icons.store_outlined), selectedIcon: Icon(Icons.store), label: 'Shop'),
+    NavigationDestination(icon: Icon(Icons.dashboard), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
+    NavigationDestination(icon: Icon(Icons.storefront_outlined), selectedIcon: Icon(Icons.storefront), label: 'Shop'),
     NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: 'Orders'),
     NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
+    NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Settings'),
   ];
 
   static const _navRoutes = [
@@ -25,232 +21,300 @@ class HomeMobileView extends ConsumerWidget {
     AppRoutes.shop,
     AppRoutes.orders,
     AppRoutes.profile,
+    AppRoutes.settings,
   ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    // Selective rebuild — only re-renders when selectedNavIndex changes.
-    final navIndex = ref.watch(homeViewModelProvider.select((s) => s.selectedNavIndex));
-    final vm = ref.read(homeViewModelProvider.notifier);
+    final cs = theme.colorScheme;
+    final state = ref.watch(homeViewModelProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('मिठाई वाले', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        title: Column(
+          children: [
+            Text('मिठाई वाले', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            Text('Dashboard • Summary Today', style: theme.textTheme.labelSmall?.copyWith(color: cs.primary)),
+          ],
+        ),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.search), onPressed: () {}),
           IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: () {}),
         ],
       ),
-      body: _MobileBody(ref: ref),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: navIndex,
-        onDestinationSelected: (i) {
-          vm.selectNavItem(i);
-          AppNav.go(_navRoutes[i]);
-        },
-        destinations: _navItems,
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => AppNav.showAddToCart(),
-        child: const Icon(Icons.add_shopping_cart),
-      ),
-    );
-  }
-}
-
-class _MobileBody extends ConsumerWidget {
-  const _MobileBody({required this.ref});
-  // ignore: unused_field
-  final WidgetRef ref;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // ── Search bar ────────────────────────────────────────
-        SearchBar(
-          hintText: 'Search sweets…',
-          leading: const Icon(Icons.search),
-          padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 16)),
-        ),
-        const SizedBox(height: 20),
-
-        // ── Categories horizontal scroll ──────────────────────
-        Text('Categories', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 90,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: _categories.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
-            itemBuilder: (context, i) => _CategoryChip(
-              label: _categories[i].label,
-              emoji: _categories[i].emoji,
-              onTap: () => ref.read(homeViewModelProvider.notifier).selectCategory(_categories[i].label),
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // ── Featured banner ───────────────────────────────────
-        Text('Featured', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
-        const _FeaturedBanner(),
-        const SizedBox(height: 24),
-
-        // ── Product grid ──────────────────────────────────────
-        Text('Popular Items', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 0.78,
-          ),
-          itemCount: _demoProducts.length,
-          itemBuilder: (context, i) => _ProductCard(product: _demoProducts[i]),
-        ),
-      ],
-    );
-  }
-}
-
-// ── Shared sub-widgets & demo data ────────────────────────────────────────────
-
-class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({required this.label, required this.emoji, this.onTap});
-  final String label;
-  final String emoji;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
+      body: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(child: Text(emoji, style: const TextStyle(fontSize: 28))),
-          ),
-          const SizedBox(height: 4),
-          Text(label, style: Theme.of(context).textTheme.labelSmall),
-        ],
-      ),
-    );
-  }
-}
-
-class _FeaturedBanner extends StatelessWidget {
-  const _FeaturedBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      height: 140,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          colors: [cs.primary, cs.secondary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('Festival Special 🎉', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text('Get 20% off on all sweets', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onPrimary.withAlpha(200))),
-          const SizedBox(height: 12),
-          FilledButton.tonal(onPressed: () {}, child: const Text('Shop Now')),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProductCard extends StatelessWidget {
-  const _ProductCard({required this.product});
-  final _Product product;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: () => AppNav.showProductDetail(product.id),
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Container(
-                color: cs.surfaceContainerHighest,
-                child: Center(child: Text(product.emoji, style: const TextStyle(fontSize: 48))),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8),
+          // ── SECTION 1: Total Money to Collect Today (Customer-wise + Overall) ──
+          Card(
+            elevation: 0,
+            color: cs.primaryContainer,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(product.name, style: Theme.of(context).textTheme.labelLarge, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 2),
-                  Text('₹${product.price}/kg', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.primary, fontWeight: FontWeight.bold)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.account_balance_wallet, color: cs.onPrimaryContainer),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Money to Collect Today',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: cs.onPrimaryContainer,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: cs.surface.withAlpha(200),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${state.customerCollections.length} Customers',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: cs.primary),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '₹${state.totalMoneyToCollect.toStringAsFixed(0)}',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      color: cs.onPrimaryContainer,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Overall pending collection balance today',
+                    style: theme.textTheme.bodySmall?.copyWith(color: cs.onPrimaryContainer.withAlpha(200)),
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(height: 1),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Customer-wise Breakdown:',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: cs.onPrimaryContainer),
+                  ),
+                  const SizedBox(height: 8),
+                  ...state.customerCollections.map(
+                    (c) => Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: cs.surface,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 14,
+                            backgroundColor: cs.primary.withAlpha(40),
+                            child: Text(c.customerName[0], style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: cs.primary)),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(c.customerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                Text('${c.orderCount} Orders • ${c.phone}', style: theme.textTheme.bodySmall),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text('₹${c.amountDue.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary)),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: c.status == 'Paid'
+                                      ? Colors.green.withAlpha(30)
+                                      : Colors.amber.withAlpha(40),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  c.status,
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    color: c.status == 'Paid' ? Colors.green[800] : Colors.amber[900],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 20),
+
+          // ── SECTION 2: Total Items Count (Middle Sum Metric e.g., 3+2+5 = 10) ──
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: cs.outlineVariant)),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.inventory_2_outlined, color: cs.primary),
+                      const SizedBox(width: 8),
+                      Text('Total Items Count Across Overall Orders', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Middle Sum Display (e.g. 3 + 2 + 5 = 10)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    decoration: BoxDecoration(
+                      color: cs.secondaryContainer.withAlpha(120),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Sum = ${state.totalItemsSum}',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: cs.onSecondaryContainer,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          '(e.g., 3 + 2 + 5 cakes / items ordered today)',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Text('Itemized Summary:', style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: state.itemSummaries.map((item) {
+                      return Chip(
+                        avatar: Text(item.emoji),
+                        label: Text('${item.name}: ${item.quantity} ${item.unit}'),
+                        backgroundColor: cs.surfaceContainerHighest,
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // ── SECTION 3: Total Orders & Recent Customer Orders ──
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Recent Customer Orders', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: cs.primary.withAlpha(30), borderRadius: BorderRadius.circular(12)),
+                child: Text(
+                  '${state.totalOrdersCount} Orders Today',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: cs.primary),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemBuilder: (context, i) {
+              final ord = state.recentOrders[i];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 10),
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: cs.outlineVariant)),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: cs.primaryContainer,
+                    child: Icon(Icons.receipt_long, color: cs.onPrimaryContainer, size: 20),
+                  ),
+                  title: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(ord.customerName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text('₹${ord.totalAmount.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary)),
+                    ],
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 2),
+                      Text('${ord.orderId} • ${ord.time} • ${ord.customerPhone}', style: theme.textTheme.bodySmall),
+                      Text(ord.itemsSummary, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                    ],
+                  ),
+                  trailing: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: ord.status == 'Ready'
+                          ? Colors.green.withAlpha(30)
+                          : ord.status == 'Preparing'
+                              ? Colors.orange.withAlpha(30)
+                              : cs.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      ord.status,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: ord.status == 'Ready'
+                            ? Colors.green[800]
+                            : ord.status == 'Preparing'
+                                ? Colors.orange[900]
+                                : cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: 0, // Home
+        onDestinationSelected: (i) => AppNav.go(_navRoutes[i]),
+        destinations: _navItems,
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => AppNav.go(AppRoutes.shop),
+        icon: const Icon(Icons.add_shopping_cart),
+        label: const Text('Start Order'),
       ),
     );
   }
 }
-
-class _Category {
-  const _Category({required this.label, required this.emoji});
-  final String label;
-  final String emoji;
-}
-
-class _Product {
-  const _Product({required this.id, required this.name, required this.price, required this.emoji});
-  final String id;
-  final String name;
-  final int price;
-  final String emoji;
-}
-
-const _categories = [
-  _Category(label: 'Ladoo', emoji: '🟡'),
-  _Category(label: 'Barfi', emoji: '🍬'),
-  _Category(label: 'Halwa', emoji: '🍮'),
-  _Category(label: 'Peda', emoji: '🟤'),
-  _Category(label: 'Rasgulla', emoji: '⚪'),
-  _Category(label: 'Jalebi', emoji: '🌀'),
-];
-
-const _demoProducts = [
-  _Product(id: '1', name: 'Motichoor Ladoo', price: 480, emoji: '🟡'),
-  _Product(id: '2', name: 'Kaju Barfi', price: 720, emoji: '🍬'),
-  _Product(id: '3', name: 'Gajar Halwa', price: 360, emoji: '🍮'),
-  _Product(id: '4', name: 'Milk Peda', price: 400, emoji: '🟤'),
-  _Product(id: '5', name: 'Rasgulla', price: 320, emoji: '⚪'),
-  _Product(id: '6', name: 'Jalebi', price: 280, emoji: '🌀'),
-];

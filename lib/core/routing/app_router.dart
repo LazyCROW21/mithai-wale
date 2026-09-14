@@ -33,6 +33,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/home/home_page.dart';
+import '../../features/menu/menu_page.dart';
 import '../../features/orders/orders_page.dart';
 import '../../features/profile/profile_page.dart';
 import '../../features/reports/reports_page.dart';
@@ -150,6 +151,11 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.settings,
       name: AppRouteNames.settings,
       builder: (context, state) => const SettingsPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.menu,
+      name: AppRouteNames.menu,
+      builder: (context, state) => const MenuPage(),
     ),
 
     // ── Modal Bottom Sheets ───────────────────────────────────────────────────

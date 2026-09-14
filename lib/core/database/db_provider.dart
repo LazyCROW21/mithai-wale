@@ -18,7 +18,11 @@ library;
 import 'package:flutter/foundation.dart';
 
 import 'app_database.dart';
+import 'repositories/category_repository.dart';
+import 'repositories/drift_category_repository.dart';
+import 'repositories/drift_menu_repository.dart';
 import 'repositories/drift_settings_repository.dart';
+import 'repositories/menu_repository.dart';
 import 'repositories/settings_repository.dart';
 
 /// Central access point for all database repositories.
@@ -28,7 +32,9 @@ import 'repositories/settings_repository.dart';
 class DatabaseProvider {
   DatabaseProvider._({required AppDatabase database})
       : _database = database,
-        settings = DriftSettingsRepository(database);
+        settings = DriftSettingsRepository(database),
+        categories = DriftCategoryRepository(database),
+        menu = DriftMenuRepository(database);
 
   /// The underlying drift database. Prefer accessing repositories over
   /// using this directly.
@@ -38,6 +44,12 @@ class DatabaseProvider {
 
   /// Key-value settings repository — platform-agnostic.
   final ISettingsRepository settings;
+
+  /// Category management repository.
+  final ICategoryRepository categories;
+
+  /// Menu items management repository.
+  final IMenuRepository menu;
 
   // ── Lifecycle ────────────────────────────────────────────────────────────────
 
