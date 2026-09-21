@@ -68,18 +68,30 @@ class ShopMobileView extends ConsumerWidget {
           const SizedBox(height: 20),
           Text('Available Sweets', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.78,
+          if (_demoProducts.isEmpty)
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+              child: const Padding(
+                padding: EdgeInsets.all(32),
+                child: Center(
+                  child: Text('No products available in shop catalog', style: TextStyle(color: Colors.grey)),
+                ),
+              ),
+            )
+          else
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 0.78,
+              ),
+              itemCount: _demoProducts.length,
+              itemBuilder: (context, i) => _ProductCard(product: _demoProducts[i]),
             ),
-            itemCount: _demoProducts.length,
-            itemBuilder: (context, i) => _ProductCard(product: _demoProducts[i]),
-          ),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -199,11 +211,4 @@ const _categories = [
   _Category(label: 'Jalebi', emoji: '🌀'),
 ];
 
-const _demoProducts = [
-  _Product(id: '1', name: 'Motichoor Ladoo', price: 480, emoji: '🟡', unit: 'kg'),
-  _Product(id: '2', name: 'Kaju Barfi', price: 720, emoji: '🍬', unit: 'kg'),
-  _Product(id: '3', name: 'Gajar Halwa', price: 360, emoji: '🍮', unit: 'kg'),
-  _Product(id: '4', name: 'Milk Peda', price: 400, emoji: '🟤', unit: 'kg'),
-  _Product(id: '5', name: 'Rasgulla', price: 320, emoji: '⚪', unit: 'pcs'),
-  _Product(id: '6', name: 'Jalebi', price: 280, emoji: '🌀', unit: 'kg'),
-];
+const List<_Product> _demoProducts = [];

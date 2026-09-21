@@ -14,7 +14,6 @@ class SettingsDesktopView extends ConsumerWidget {
     (icon: Icons.store_outlined, selectedIcon: Icons.store, label: 'Shop', route: AppRoutes.shop),
     (icon: Icons.restaurant_menu_outlined, selectedIcon: Icons.restaurant_menu, label: 'Menu', route: AppRoutes.menu),
     (icon: Icons.receipt_long_outlined, selectedIcon: Icons.receipt_long, label: 'Orders', route: AppRoutes.orders),
-    (icon: Icons.analytics_outlined, selectedIcon: Icons.analytics, label: 'Reports', route: AppRoutes.reports),
     (icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Profile', route: AppRoutes.profile),
     (icon: Icons.settings, selectedIcon: Icons.settings, label: 'Settings', route: AppRoutes.settings),
   ];
@@ -30,7 +29,7 @@ class SettingsDesktopView extends ConsumerWidget {
       body: Row(
         children: [
           NavigationDrawer(
-            selectedIndex: 6, // Settings index
+            selectedIndex: 5, // Settings index
             onDestinationSelected: (i) => AppNav.go(_navItems[i].route),
             children: [
               Padding(

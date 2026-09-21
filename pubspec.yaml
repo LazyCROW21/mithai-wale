@@ -36,7 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   # ─── Local Database (Drift / SQLite) ───────────────────────────────────────
-  drift: ^2.22.1
+  drift: ^2.35.0
   sqlite3_flutter_libs: ^0.5.27   # Bundles native SQLite for Android/iOS/Windows
   path_provider: ^2.1.5           # Locates the DB file on native platforms
   path: ^1.9.1                    # Path utilities
@@ -62,7 +62,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
   # ─── Code Generation (Drift) ───────────────────────────────────────────────
-  drift_dev: ^2.22.1
+  drift_dev: ^2.35.0
   build_runner: ^2.4.13
 
 # For information on the generic Dart part of this file, see the

@@ -122,18 +122,16 @@ class _ProductGrid extends StatelessWidget {
   const _ProductGrid({required this.crossAxisCount});
   final int crossAxisCount;
 
-  static const _products = [
-    (id: '1', name: 'Motichoor Ladoo', price: 480, emoji: '🟡'),
-    (id: '2', name: 'Kaju Barfi', price: 720, emoji: '🍬'),
-    (id: '3', name: 'Gajar Halwa', price: 360, emoji: '🍮'),
-    (id: '4', name: 'Milk Peda', price: 400, emoji: '🟤'),
-    (id: '5', name: 'Rasgulla', price: 320, emoji: '⚪'),
-    (id: '6', name: 'Jalebi', price: 280, emoji: '🌀'),
-  ];
+  static const List<({String emoji, String id, String name, int price})> _products = [];
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    if (_products.isEmpty) {
+      return const Center(
+        child: Text('No products available in shop catalog', style: TextStyle(color: Colors.grey)),
+      );
+    }
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(

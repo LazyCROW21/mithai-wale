@@ -21,7 +21,6 @@ abstract final class AppRoutes {
   static const home = '/';
   static const shop = '/shop';
   static const orders = '/orders';
-  static const reports = '/reports';
   static const profile = '/profile';
   static const settings = '/settings';
   static const menu = '/menu';
@@ -45,7 +44,6 @@ abstract final class AppRouteNames {
   static const home = 'home';
   static const shop = 'shop';
   static const orders = 'orders';
-  static const reports = 'reports';
   static const profile = 'profile';
   static const settings = 'settings';
   static const menu = 'menu';

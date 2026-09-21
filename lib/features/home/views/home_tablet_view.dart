@@ -92,34 +92,36 @@ class HomeTabletView extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 8),
                                 Text('₹${state.totalMoneyToCollect.toStringAsFixed(0)}', style: theme.textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold, color: cs.onPrimaryContainer)),
-                                const SizedBox(height: 12),
-                                const Divider(),
-                                const SizedBox(height: 8),
-                                Text('Customer Breakdown:', style: TextStyle(fontWeight: FontWeight.bold, color: cs.onPrimaryContainer)),
-                                const SizedBox(height: 8),
-                                ...state.customerCollections.map(
-                                  (c) => Container(
-                                    margin: const EdgeInsets.only(bottom: 8),
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(8)),
-                                    child: Row(
-                                      children: [
-                                        CircleAvatar(radius: 14, child: Text(c.customerName[0])),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(c.customerName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                              Text('${c.orderCount} Orders • ${c.phone}', style: theme.textTheme.bodySmall),
-                                            ],
+                                if (state.customerCollections.isNotEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  const Divider(),
+                                  const SizedBox(height: 8),
+                                  Text('Customer Breakdown:', style: TextStyle(fontWeight: FontWeight.bold, color: cs.onPrimaryContainer)),
+                                  const SizedBox(height: 8),
+                                  ...state.customerCollections.map(
+                                    (c) => Container(
+                                      margin: const EdgeInsets.only(bottom: 8),
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(8)),
+                                      child: Row(
+                                        children: [
+                                          CircleAvatar(radius: 14, child: Text(c.customerName.isNotEmpty ? c.customerName[0] : '?')),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(c.customerName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                                Text('${c.orderCount} Orders • ${c.phone}', style: theme.textTheme.bodySmall),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                        Text('₹${c.amountDue.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary)),
-                                      ],
+                                          Text('₹${c.amountDue.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary)),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
+                                ],
                               ],
                             ),
                           ),
@@ -144,21 +146,23 @@ class HomeTabletView extends ConsumerWidget {
                                     children: [
                                       Text('Sum = ${state.totalItemsSum}', style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: cs.onSecondaryContainer)),
                                       const SizedBox(height: 4),
-                                      const Text('(e.g., 3 + 2 + 5 cakes / items overall)', style: TextStyle(fontSize: 12)),
+                                      const Text('Total items ordered today', style: TextStyle(fontSize: 12)),
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 16),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: state.itemSummaries.map((item) {
-                                    return Chip(
-                                      avatar: Text(item.emoji),
-                                      label: Text('${item.name}: ${item.quantity} ${item.unit}'),
-                                    );
-                                  }).toList(),
-                                ),
+                                if (state.itemSummaries.isNotEmpty) ...[
+                                  const SizedBox(height: 16),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: state.itemSummaries.map((item) {
+                                      return Chip(
+                                        avatar: Text(item.emoji),
+                                        label: Text('${item.name}: ${item.quantity} ${item.unit}'),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -182,48 +186,60 @@ class HomeTabletView extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: state.recentOrders.length,
-                          itemBuilder: (context, i) {
-                            final ord = state.recentOrders[i];
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: cs.outlineVariant)),
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: cs.primaryContainer,
-                                  child: Icon(Icons.receipt_long, color: cs.onPrimaryContainer, size: 20),
-                                ),
-                                title: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(ord.customerName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                    Text('₹${ord.totalAmount.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary)),
-                                  ],
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 2),
-                                    Text('${ord.orderId} • ${ord.time} • ${ord.customerPhone}', style: theme.textTheme.bodySmall),
-                                    Text(ord.itemsSummary, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                                  ],
-                                ),
-                                trailing: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: ord.status == 'Ready' ? Colors.green.withAlpha(30) : Colors.orange.withAlpha(30),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(ord.status, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                                ),
+                        if (state.recentOrders.isEmpty)
+                          Card(
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: cs.outlineVariant)),
+                            child: const Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Center(
+                                child: Text('No recent orders today', style: TextStyle(color: Colors.grey)),
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          )
+                        else
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: state.recentOrders.length,
+                            itemBuilder: (context, i) {
+                              final ord = state.recentOrders[i];
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: cs.outlineVariant)),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: cs.primaryContainer,
+                                    child: Icon(Icons.receipt_long, color: cs.onPrimaryContainer, size: 20),
+                                  ),
+                                  title: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(ord.customerName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      Text('₹${ord.totalAmount.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary)),
+                                    ],
+                                  ),
+                                  subtitle: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const SizedBox(height: 2),
+                                      Text('${ord.orderId} • ${ord.time} • ${ord.customerPhone}', style: theme.textTheme.bodySmall),
+                                      Text(ord.itemsSummary, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                                    ],
+                                  ),
+                                  trailing: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: ord.status == 'Ready' ? Colors.green.withAlpha(30) : Colors.orange.withAlpha(30),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(ord.status, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                       ],
                     ),
                   ),

@@ -36,7 +36,6 @@ import '../../features/home/home_page.dart';
 import '../../features/menu/menu_page.dart';
 import '../../features/orders/orders_page.dart';
 import '../../features/profile/profile_page.dart';
-import '../../features/reports/reports_page.dart';
 import '../../features/settings/settings_page.dart';
 import '../../features/shop/shop_page.dart';
 import 'router_key.dart';
@@ -136,11 +135,6 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.orders,
       name: AppRouteNames.orders,
       builder: (context, state) => const OrdersPage(),
-    ),
-    GoRoute(
-      path: AppRoutes.reports,
-      name: AppRouteNames.reports,
-      builder: (context, state) => const ReportsPage(),
     ),
     GoRoute(
       path: AppRoutes.profile,

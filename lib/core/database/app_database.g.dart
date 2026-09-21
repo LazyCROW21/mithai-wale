@@ -1186,7 +1186,16 @@ class $$SettingsTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$SettingsTableTable, SettingsTableData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $SettingsTableTable,
+                    SettingsTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -1439,7 +1448,7 @@ class $$CategoriesTableTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$CategoriesTableTable, Category>(table),
                   $$CategoriesTableTableReferences(db, table, e),
                 ),
               )
@@ -1809,7 +1818,7 @@ class $$MenuItemsTableTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$MenuItemsTableTable, MenuItem>(table),
                   $$MenuItemsTableTableReferences(db, table, e),
                 ),
               )

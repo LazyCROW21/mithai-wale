@@ -98,65 +98,67 @@ class HomeMobileView extends ConsumerWidget {
                     style: theme.textTheme.bodySmall?.copyWith(color: cs.onPrimaryContainer.withAlpha(200)),
                   ),
                   const SizedBox(height: 16),
-                  const Divider(height: 1),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Customer-wise Breakdown:',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: cs.onPrimaryContainer),
-                  ),
-                  const SizedBox(height: 8),
-                  ...state.customerCollections.map(
-                    (c) => Container(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: cs.surface,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 14,
-                            backgroundColor: cs.primary.withAlpha(40),
-                            child: Text(c.customerName[0], style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: cs.primary)),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(c.customerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                Text('${c.orderCount} Orders • ${c.phone}', style: theme.textTheme.bodySmall),
-                              ],
+                  if (state.customerCollections.isNotEmpty) ...[
+                    const Divider(height: 1),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Customer-wise Breakdown:',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: cs.onPrimaryContainer),
+                    ),
+                    const SizedBox(height: 8),
+                    ...state.customerCollections.map(
+                      (c) => Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: cs.surface,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 14,
+                              backgroundColor: cs.primary.withAlpha(40),
+                              child: Text(c.customerName.isNotEmpty ? c.customerName[0] : '?', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: cs.primary)),
                             ),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text('₹${c.amountDue.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary)),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                decoration: BoxDecoration(
-                                  color: c.status == 'Paid'
-                                      ? Colors.green.withAlpha(30)
-                                      : Colors.amber.withAlpha(40),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  c.status,
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                    color: c.status == 'Paid' ? Colors.green[800] : Colors.amber[900],
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(c.customerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  Text('${c.orderCount} Orders • ${c.phone}', style: theme.textTheme.bodySmall),
+                                ],
+                              ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text('₹${c.amountDue.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary)),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: c.status == 'Paid'
+                                        ? Colors.green.withAlpha(30)
+                                        : Colors.amber.withAlpha(40),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    c.status,
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      color: c.status == 'Paid' ? Colors.green[800] : Colors.amber[900],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -181,7 +183,7 @@ class HomeMobileView extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // Middle Sum Display (e.g. 3 + 2 + 5 = 10)
+                  // Middle Sum Display
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 18),
@@ -201,30 +203,32 @@ class HomeMobileView extends ConsumerWidget {
                         ),
                         const SizedBox(height: 4),
                         const Text(
-                          '(e.g., 3 + 2 + 5 cakes / items ordered today)',
+                          'Total items ordered today',
                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text('Itemized Summary:', style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: state.itemSummaries.map((item) {
-                      return Chip(
-                        avatar: Text(item.emoji),
-                        label: Text('${item.name}: ${item.quantity} ${item.unit}'),
-                        backgroundColor: cs.surfaceContainerHighest,
-                      );
-                    }).toList(),
-                  ),
+                  if (state.itemSummaries.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Text('Itemized Summary:', style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: state.itemSummaries.map((item) {
+                        return Chip(
+                          avatar: Text(item.emoji),
+                          label: Text('${item.name}: ${item.quantity} ${item.unit}'),
+                          backgroundColor: cs.surfaceContainerHighest,
+                        );
+                      }).toList(),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -247,62 +251,75 @@ class HomeMobileView extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemBuilder: (context, i) {
-              final ord = state.recentOrders[i];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 10),
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: cs.outlineVariant)),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: cs.primaryContainer,
-                    child: Icon(Icons.receipt_long, color: cs.onPrimaryContainer, size: 20),
-                  ),
-                  title: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(ord.customerName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Text('₹${ord.totalAmount.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary)),
-                    ],
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 2),
-                      Text('${ord.orderId} • ${ord.time} • ${ord.customerPhone}', style: theme.textTheme.bodySmall),
-                      Text(ord.itemsSummary, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-                    ],
-                  ),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: ord.status == 'Ready'
-                          ? Colors.green.withAlpha(30)
-                          : ord.status == 'Preparing'
-                              ? Colors.orange.withAlpha(30)
-                              : cs.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(4),
+          if (state.recentOrders.isEmpty)
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: cs.outlineVariant)),
+              child: const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(
+                  child: Text('No recent orders today', style: TextStyle(color: Colors.grey)),
+                ),
+              ),
+            )
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: state.recentOrders.length,
+              itemBuilder: (context, i) {
+                final ord = state.recentOrders[i];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: cs.outlineVariant)),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: cs.primaryContainer,
+                      child: Icon(Icons.receipt_long, color: cs.onPrimaryContainer, size: 20),
                     ),
-                    child: Text(
-                      ord.status,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(ord.customerName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text('₹${ord.totalAmount.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary)),
+                      ],
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 2),
+                        Text('${ord.orderId} • ${ord.time} • ${ord.customerPhone}', style: theme.textTheme.bodySmall),
+                        Text(ord.itemsSummary, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                      ],
+                    ),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
                         color: ord.status == 'Ready'
-                            ? Colors.green[800]
+                            ? Colors.green.withAlpha(30)
                             : ord.status == 'Preparing'
-                                ? Colors.orange[900]
-                                : cs.onSurfaceVariant,
+                                ? Colors.orange.withAlpha(30)
+                                : cs.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        ord.status,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: ord.status == 'Ready'
+                              ? Colors.green[800]
+                              : ord.status == 'Preparing'
+                                  ? Colors.orange[900]
+                                  : cs.onSurfaceVariant,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
-          ),
+                );
+              },
+            ),
         ],
       ),
       bottomNavigationBar: NavigationBar(

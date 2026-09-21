@@ -13,7 +13,6 @@ class HomeDesktopView extends ConsumerWidget {
     (icon: Icons.storefront_outlined, selectedIcon: Icons.storefront, label: 'Shop', route: AppRoutes.shop),
     (icon: Icons.restaurant_menu_outlined, selectedIcon: Icons.restaurant_menu, label: 'Menu', route: AppRoutes.menu),
     (icon: Icons.receipt_long_outlined, selectedIcon: Icons.receipt_long, label: 'Orders', route: AppRoutes.orders),
-    (icon: Icons.analytics_outlined, selectedIcon: Icons.analytics, label: 'Reports', route: AppRoutes.reports),
     (icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Profile', route: AppRoutes.profile),
     (icon: Icons.settings_outlined, selectedIcon: Icons.settings, label: 'Settings', route: AppRoutes.settings),
   ];
@@ -131,7 +130,7 @@ class HomeDesktopView extends ConsumerWidget {
                                     const SizedBox(height: 4),
                                     Text('Sum = ${state.totalItemsSum}', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: cs.onSecondaryContainer)),
                                     const SizedBox(height: 4),
-                                    Text('(e.g., 3 + 2 + 5 cakes / items sum)', style: TextStyle(fontSize: 11, color: cs.onSecondaryContainer.withAlpha(200))),
+                                    Text('Total items ordered today', style: TextStyle(fontSize: 11, color: cs.onSecondaryContainer.withAlpha(200))),
                                   ],
                                 ),
                               ),
@@ -180,33 +179,39 @@ class HomeDesktopView extends ConsumerWidget {
                                   children: [
                                     Text('Customer Money Collection', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                                     const SizedBox(height: 16),
-                                    ...state.customerCollections.map(
-                                      (c) => Padding(
-                                        padding: const EdgeInsets.only(bottom: 12),
-                                        child: Row(
-                                          children: [
-                                            CircleAvatar(child: Text(c.customerName[0])),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                    if (state.customerCollections.isEmpty)
+                                      const Padding(
+                                        padding: EdgeInsets.symmetric(vertical: 16),
+                                        child: Text('No pending customer collections', style: TextStyle(color: Colors.grey)),
+                                      )
+                                    else
+                                      ...state.customerCollections.map(
+                                        (c) => Padding(
+                                          padding: const EdgeInsets.only(bottom: 12),
+                                          child: Row(
+                                            children: [
+                                              CircleAvatar(child: Text(c.customerName.isNotEmpty ? c.customerName[0] : '?')),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(c.customerName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                                    Text('${c.orderCount} orders • ${c.phone}', style: theme.textTheme.bodySmall),
+                                                  ],
+                                                ),
+                                              ),
+                                              Column(
+                                                crossAxisAlignment: CrossAxisAlignment.end,
                                                 children: [
-                                                  Text(c.customerName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                                  Text('${c.orderCount} orders • ${c.phone}', style: theme.textTheme.bodySmall),
+                                                  Text('₹${c.amountDue.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary)),
+                                                  Text(c.status, style: TextStyle(fontSize: 10, color: cs.outline)),
                                                 ],
                                               ),
-                                            ),
-                                            Column(
-                                              crossAxisAlignment: CrossAxisAlignment.end,
-                                              children: [
-                                                Text('₹${c.amountDue.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary)),
-                                                Text(c.status, style: TextStyle(fontSize: 10, color: cs.outline)),
-                                              ],
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                    ),
                                   ],
                                 ),
                               ),
@@ -227,36 +232,42 @@ class HomeDesktopView extends ConsumerWidget {
                                   children: [
                                     Text('Recent Orders & Customer Info', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                                     const SizedBox(height: 16),
-                                    ...state.recentOrders.map(
-                                      (ord) => Padding(
-                                        padding: const EdgeInsets.only(bottom: 12),
-                                        child: Row(
-                                          children: [
-                                            CircleAvatar(
-                                              backgroundColor: cs.primaryContainer,
-                                              child: Icon(Icons.receipt_long, color: cs.onPrimaryContainer, size: 20),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                    if (state.recentOrders.isEmpty)
+                                      const Padding(
+                                        padding: EdgeInsets.symmetric(vertical: 16),
+                                        child: Text('No recent orders today', style: TextStyle(color: Colors.grey)),
+                                      )
+                                    else
+                                      ...state.recentOrders.map(
+                                        (ord) => Padding(
+                                          padding: const EdgeInsets.only(bottom: 12),
+                                          child: Row(
+                                            children: [
+                                              CircleAvatar(
+                                                backgroundColor: cs.primaryContainer,
+                                                child: Icon(Icons.receipt_long, color: cs.onPrimaryContainer, size: 20),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(ord.customerName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                                    Text('${ord.orderId} • ${ord.itemsSummary}', style: theme.textTheme.bodySmall),
+                                                  ],
+                                                ),
+                                              ),
+                                              Column(
+                                                crossAxisAlignment: CrossAxisAlignment.end,
                                                 children: [
-                                                  Text(ord.customerName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                                  Text('${ord.orderId} • ${ord.itemsSummary}', style: theme.textTheme.bodySmall),
+                                                  Text('₹${ord.totalAmount.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary)),
+                                                  Text(ord.status, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                                                 ],
                                               ),
-                                            ),
-                                            Column(
-                                              crossAxisAlignment: CrossAxisAlignment.end,
-                                              children: [
-                                                Text('₹${ord.totalAmount.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary)),
-                                                Text(ord.status, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                                              ],
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                    ),
                                   ],
                                 ),
                               ),

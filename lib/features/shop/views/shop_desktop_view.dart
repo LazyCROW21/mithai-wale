@@ -13,7 +13,6 @@ class ShopDesktopView extends ConsumerWidget {
     (icon: Icons.storefront_outlined, selectedIcon: Icons.storefront, label: 'Shop', route: AppRoutes.shop),
     (icon: Icons.restaurant_menu_outlined, selectedIcon: Icons.restaurant_menu, label: 'Menu', route: AppRoutes.menu),
     (icon: Icons.receipt_long_outlined, selectedIcon: Icons.receipt_long, label: 'Orders', route: AppRoutes.orders),
-    (icon: Icons.analytics_outlined, selectedIcon: Icons.analytics, label: 'Reports', route: AppRoutes.reports),
     (icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Profile', route: AppRoutes.profile),
     (icon: Icons.settings_outlined, selectedIcon: Icons.settings, label: 'Settings', route: AppRoutes.settings),
   ];
@@ -132,18 +131,16 @@ class _DesktopToolbar extends StatelessWidget {
 class _DesktopProductGrid extends StatelessWidget {
   const _DesktopProductGrid();
 
-  static const _products = [
-    (id: '1', name: 'Motichoor Ladoo', price: 480, emoji: '🟡', unit: '1 kg'),
-    (id: '2', name: 'Kaju Barfi', price: 720, emoji: '🍬', unit: '500 g'),
-    (id: '3', name: 'Gajar Halwa', price: 360, emoji: '🍮', unit: '1 kg'),
-    (id: '4', name: 'Milk Peda', price: 400, emoji: '🟤', unit: '500 g'),
-    (id: '5', name: 'Rasgulla', price: 320, emoji: '⚪', unit: '12 pcs'),
-    (id: '6', name: 'Jalebi', price: 280, emoji: '🌀', unit: '1 kg'),
-  ];
+  static const List<({String emoji, String id, String name, int price, String unit})> _products = [];
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    if (_products.isEmpty) {
+      return const Center(
+        child: Text('No products available in shop catalog', style: TextStyle(color: Colors.grey)),
+      );
+    }
     return GridView.builder(
       padding: const EdgeInsets.all(24),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -204,10 +201,7 @@ class _DesktopProductGrid extends StatelessWidget {
 class _CartPanel extends StatelessWidget {
   const _CartPanel();
 
-  static const _cartItems = [
-    (name: 'Motichoor Ladoo', price: 480, qty: 2, emoji: '🟡'),
-    (name: 'Kaju Barfi', price: 720, qty: 1, emoji: '🍬'),
-  ];
+  static const List<({String emoji, String name, int price, int qty})> _cartItems = [];
 
   @override
   Widget build(BuildContext context) {
@@ -233,35 +227,39 @@ class _CartPanel extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: _cartItems.length,
-            separatorBuilder: (context, index) => const Divider(),
-            itemBuilder: (context, i) {
-              final item = _cartItems[i];
-              return Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
-                    child: Center(child: Text(item.emoji, style: const TextStyle(fontSize: 24))),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+          child: _cartItems.isEmpty
+              ? const Center(
+                  child: Text('Your cart is empty', style: TextStyle(color: Colors.grey)),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _cartItems.length,
+                  separatorBuilder: (context, index) => const Divider(),
+                  itemBuilder: (context, i) {
+                    final item = _cartItems[i];
+                    return Row(
                       children: [
-                        Text(item.name, style: theme.textTheme.labelMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
-                        Text('₹${item.price} × ${item.qty}', style: theme.textTheme.bodySmall?.copyWith(color: cs.outline)),
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
+                          child: Center(child: Text(item.emoji, style: const TextStyle(fontSize: 24))),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(item.name, style: theme.textTheme.labelMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+                              Text('₹${item.price} × ${item.qty}', style: theme.textTheme.bodySmall?.copyWith(color: cs.outline)),
+                            ],
+                          ),
+                        ),
+                        Text('₹${item.price * item.qty}', style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold)),
                       ],
-                    ),
-                  ),
-                  Text('₹${item.price * item.qty}', style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold)),
-                ],
-              );
-            },
-          ),
+                    );
+                  },
+                ),
         ),
         Padding(
           padding: const EdgeInsets.all(16),
@@ -276,7 +274,7 @@ class _CartPanel extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               FilledButton.icon(
-                onPressed: () => AppNav.showAddToCart(),
+                onPressed: _cartItems.isEmpty ? null : () => AppNav.showAddToCart(),
                 icon: const Icon(Icons.payment),
                 label: const Text('Checkout Order'),
                 style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 48)),

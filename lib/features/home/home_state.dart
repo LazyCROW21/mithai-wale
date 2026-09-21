@@ -58,27 +58,12 @@ class HomeState {
   const HomeState({
     this.selectedNavIndex = 0,
     this.selectedCategory = 'All',
-    this.totalMoneyToCollect = 14850.0,
-    this.customerCollections = const [
-      CustomerCollectionEntry(customerName: 'Rajesh Sharma', phone: '+91 98765 43210', amountDue: 3400.0, orderCount: 2, status: 'Pending'),
-      CustomerCollectionEntry(customerName: 'Priya Verma', phone: '+91 98123 45678', amountDue: 2150.0, orderCount: 1, status: 'Partial'),
-      CustomerCollectionEntry(customerName: 'Amit Patel', phone: '+91 99887 76655', amountDue: 4800.0, orderCount: 3, status: 'Pending'),
-      CustomerCollectionEntry(customerName: 'Sunita Gupta', phone: '+91 97654 32109', amountDue: 4500.0, orderCount: 2, status: 'Pending'),
-    ],
-    this.totalItemsSum = 10, // Sum = 10 (e.g. 2 + 5 + 3 cakes/items)
-    this.itemSummaries = const [
-      ItemQuantitySummary(name: 'Special Eggless Cake', quantity: 10, unit: 'pcs', emoji: '🎂'),
-      ItemQuantitySummary(name: 'Motichoor Ladoo', quantity: 25, unit: 'kg', emoji: '🟡'),
-      ItemQuantitySummary(name: 'Kaju Barfi', quantity: 18, unit: 'kg', emoji: '🍬'),
-      ItemQuantitySummary(name: 'Bengali Rasgulla', quantity: 30, unit: 'pcs', emoji: '⚪'),
-    ],
-    this.totalOrdersCount = 12,
-    this.recentOrders = const [
-      OrderSummary(orderId: '#ORD-1089', customerName: 'Rajesh Sharma', customerPhone: '+91 98765 43210', time: '10:45 AM', itemsSummary: '3x Cake, 2kg Ladoo', totalAmount: 3400.0, status: 'Ready'),
-      OrderSummary(orderId: '#ORD-1088', customerName: 'Priya Verma', customerPhone: '+91 98123 45678', time: '10:30 AM', itemsSummary: '2x Cake, 1kg Barfi', totalAmount: 2150.0, status: 'Preparing'),
-      OrderSummary(orderId: '#ORD-1087', customerName: 'Amit Patel', customerPhone: '+91 99887 76655', time: '09:50 AM', itemsSummary: '5x Cake, 5kg Halwa', totalAmount: 4800.0, status: 'Preparing'),
-      OrderSummary(orderId: '#ORD-1086', customerName: 'Sunita Gupta', customerPhone: '+91 97654 32109', time: '09:15 AM', itemsSummary: '3x Rasgulla Box, 2kg Peda', totalAmount: 4500.0, status: 'Delivered'),
-    ],
+    this.totalMoneyToCollect = 0.0,
+    this.customerCollections = const [],
+    this.totalItemsSum = 0,
+    this.itemSummaries = const [],
+    this.totalOrdersCount = 0,
+    this.recentOrders = const [],
     this.isLoading = false,
   });
 

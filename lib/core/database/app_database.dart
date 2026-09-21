@@ -97,33 +97,6 @@ class AppDatabase extends _$AppDatabase {
         );
       }
     }
-
-    final itemCount = await select(menuItemsTable).get();
-    if (itemCount.isEmpty) {
-      final cats = await select(categoriesTable).get();
-      final catMap = {for (var c in cats) c.name: c.id};
-
-      final defaultItems = [
-        (title: 'Motichoor Ladoo', desc: 'Fresh & delicious pure ghee motichoor ladoo', category: 'Ladoo', price: 480.0, unit: 'kg'),
-        (title: 'Kaju Barfi', desc: 'Premium cashew barfi with silver leaf', category: 'Barfi', price: 720.0, unit: 'kg'),
-        (title: 'Gajar Halwa', desc: 'Rich winter carrot halwa cooked in milk & khoya', category: 'Halwa', price: 360.0, unit: 'kg'),
-        (title: 'Milk Peda', desc: 'Traditional Mathura style milk peda', category: 'Peda', price: 400.0, unit: 'kg'),
-        (title: 'Rasgulla', desc: 'Soft & spongy authentic Bengali rasgullas', category: 'Rasgulla', price: 320.0, unit: 'per piece'),
-        (title: 'Jalebi', desc: 'Crispy ghee fried jalebi in saffron syrup', category: 'Jalebi', price: 280.0, unit: 'kg'),
-      ];
-
-      for (final item in defaultItems) {
-        await into(menuItemsTable).insert(
-          MenuItemsTableCompanion.insert(
-            title: item.title,
-            description: Value(item.desc),
-            categoryId: Value(catMap[item.category]),
-            price: item.price,
-            unit: item.unit,
-          ),
-        );
-      }
-    }
   }
 }
 
