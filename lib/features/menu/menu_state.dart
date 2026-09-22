@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart' hide Category;
-import '../../core/database/app_database.dart';
+
+import '../../core/database/models/category_model.dart';
+import '../../core/database/models/menu_item_model.dart';
 
 @immutable
 class MenuState {
@@ -29,12 +31,12 @@ class MenuState {
         return matchesSearch;
       }
 
-      final category = categories.firstWhere(
-        (c) => c.id == item.categoryId,
-        orElse: () => Category(id: -1, name: '', emoji: null, createdAt: DateTime.now()),
+      final Category? category = categories.cast<Category?>().firstWhere(
+        (c) => c?.id == item.categoryId,
+        orElse: () => null,
       );
 
-      final matchesCategory = category.name.toLowerCase() == selectedCategoryFilter.toLowerCase();
+      final matchesCategory = category?.name.toLowerCase() == selectedCategoryFilter.toLowerCase();
       return matchesSearch && matchesCategory;
     }).toList();
   }

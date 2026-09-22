@@ -1,8 +1,7 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/database/app_database.dart';
+import '../../../core/database/models/category_model.dart';
 import '../../../core/layout/layout_extensions.dart';
 import '../menu_providers.dart';
 
@@ -71,7 +70,10 @@ class _ManageCategoriesSheetState extends ConsumerState<ManageCategoriesSheet> {
     final vm = ref.read(menuViewModelProvider.notifier);
 
     if (_editingCategory != null) {
-      await vm.updateCategory(_editingCategory!.copyWith(name: name, emoji: Value(emoji.isEmpty ? null : emoji)));
+      await vm.updateCategory(_editingCategory!.copyWith(
+        name: name,
+        emoji: emoji.isEmpty ? null : emoji,
+      ));
     } else {
       await vm.addCategory(name: name, emoji: emoji.isEmpty ? null : emoji);
     }

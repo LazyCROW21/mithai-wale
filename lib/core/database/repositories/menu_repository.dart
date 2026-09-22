@@ -1,4 +1,4 @@
-import '../app_database.dart';
+import '../models/menu_item_model.dart';
 
 abstract interface class IMenuRepository {
   Future<List<MenuItem>> getAll();

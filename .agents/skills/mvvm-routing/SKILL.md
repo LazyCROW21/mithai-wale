@@ -17,8 +17,8 @@ description: >
                          └──────┬───────┘
               ┌─────────────────┼──────────────────┐
               ▼                 ▼                  ▼
-     DatabaseProvider    setupServiceLocator   ProviderScope
-     (drift / SQLite)    (get_it singletons)  (Riverpod root)
+      DatabaseProvider    setupServiceLocator   ProviderScope
+      (Hive / Box)        (get_it singletons)  (Riverpod root)
                                 │
                                 ▼
                           MaterialApp.router

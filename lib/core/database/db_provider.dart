@@ -1,48 +1,29 @@
-/// Singleton database provider for the mithai_wale app.
-///
-/// Initialises [AppDatabase] once and exposes all repositories through a
-/// single access point. Inject [DatabaseProvider.instance] at the app root
-/// (e.g., via a Provider or InheritedWidget) so that all features share the
-/// same database connection.
-///
-/// ### Example
-/// ```dart
-/// void main() async {
-///   WidgetsFlutterBinding.ensureInitialized();
-///   final db = await DatabaseProvider.init();
-///   runApp(MyApp(dbProvider: db));
-/// }
-/// ```
+/// Singleton database provider for the mithai_wale app using Hive.
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-import 'app_database.dart';
 import 'repositories/category_repository.dart';
-import 'repositories/drift_category_repository.dart';
-import 'repositories/drift_menu_repository.dart';
-import 'repositories/drift_settings_repository.dart';
+import 'repositories/hive_category_repository.dart';
+import 'repositories/hive_menu_repository.dart';
+import 'repositories/hive_settings_repository.dart';
 import 'repositories/menu_repository.dart';
 import 'repositories/settings_repository.dart';
 
-/// Central access point for all database repositories.
-///
-/// Call [DatabaseProvider.init] once at app startup, then use
-/// [DatabaseProvider.instance] everywhere else.
+/// Central access point for all database repositories (Hive-backed).
 class DatabaseProvider {
-  DatabaseProvider._({required AppDatabase database})
-      : _database = database,
-        settings = DriftSettingsRepository(database),
-        categories = DriftCategoryRepository(database),
-        menu = DriftMenuRepository(database);
-
-  /// The underlying drift database. Prefer accessing repositories over
-  /// using this directly.
-  final AppDatabase _database;
+  DatabaseProvider._({
+    required Box<String> settingsBox,
+    required Box<Map> categoriesBox,
+    required Box<Map> menuBox,
+  })  : settings = HiveSettingsRepository(settingsBox),
+        categories = HiveCategoryRepository(categoriesBox),
+        menu = HiveMenuRepository(menuBox);
 
   // ── Repositories ────────────────────────────────────────────────────────────
 
-  /// Key-value settings repository — platform-agnostic.
+  /// Key-value settings repository.
   final ISettingsRepository settings;
 
   /// Category management repository.
@@ -56,38 +37,66 @@ class DatabaseProvider {
   static DatabaseProvider? _instance;
 
   /// Returns the initialised [DatabaseProvider].
-  ///
-  /// Throws if [init] has not been called yet.
   static DatabaseProvider get instance {
-    assert(_instance != null, 'DatabaseProvider.init() must be called before accessing DatabaseProvider.instance.');
+    assert(
+      _instance != null,
+      'DatabaseProvider.init() must be called before accessing DatabaseProvider.instance.',
+    );
     return _instance!;
   }
 
-  /// Initialises the database and all repositories.
-  ///
-  /// Safe to call multiple times — subsequent calls return the existing
-  /// instance without re-opening the database.
+  /// Initialises Hive and all boxes and repositories.
   static Future<DatabaseProvider> init() async {
     if (_instance != null) return _instance!;
 
-    final db = AppDatabase();
-    _instance = DatabaseProvider._(database: db);
+    await Hive.initFlutter();
+
+    final settingsBox = await Hive.openBox<String>('settings');
+    final categoriesBox = await Hive.openBox<Map>('categories');
+    final menuBox = await Hive.openBox<Map>('menu_items');
+
+    final provider = DatabaseProvider._(
+      settingsBox: settingsBox,
+      categoriesBox: categoriesBox,
+      menuBox: menuBox,
+    );
+
+    await provider._seedDefaults();
+
+    _instance = provider;
 
     if (kDebugMode) {
-      print('[DB] Database initialised on ${_platformName()}');
+      print('[DB] Hive database initialised on ${_platformName()}');
     }
 
     return _instance!;
   }
 
-  /// Closes the database connection. Call on app teardown if needed.
+  Future<void> _seedDefaults() async {
+    final existingCategories = await categories.getAll();
+    if (existingCategories.isEmpty) {
+      final defaultCategories = [
+        (name: 'Ladoo', emoji: '🟡'),
+        (name: 'Barfi', emoji: '🍬'),
+        (name: 'Halwa', emoji: '🍮'),
+        (name: 'Peda', emoji: '🟤'),
+        (name: 'Rasgulla', emoji: '⚪'),
+        (name: 'Jalebi', emoji: '🌀'),
+      ];
+      for (final cat in defaultCategories) {
+        await categories.add(name: cat.name, emoji: cat.emoji);
+      }
+    }
+  }
+
+  /// Disposes Hive boxes.
   Future<void> dispose() async {
-    await _database.close();
+    await Hive.close();
     _instance = null;
   }
 
   static String _platformName() {
-    if (kIsWeb) return 'Web (WASM/OPFS)';
+    if (kIsWeb) return 'Web (IndexedDB via Hive)';
     return defaultTargetPlatform.name;
   }
 }

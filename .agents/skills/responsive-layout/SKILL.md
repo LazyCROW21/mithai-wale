@@ -113,130 +113,31 @@ Available extensions on `BuildContext`:
 ### Architecture
 
 ```
-AppDatabase (drift schema)
+Hive (Key-Value / Document Store)
     │
-    ├── connection_native.dart  ← Android, iOS, Windows (SQLite via FFI)
-    └── connection_web.dart     ← Web (WASM / OPFS)
-           ↕ (selected by conditional import in app_database.dart)
+    ├── Box<String> ('settings')
+    ├── Box<Map>    ('categories')
+    └── Box<Map>    ('menu_items')
+            ↕ (initialized in db_provider.dart via Hive.initFlutter())
 
 ISettingsRepository (abstract interface)
-    └── DriftSettingsRepository (concrete drift impl)
+    └── HiveSettingsRepository (concrete Hive impl)
            ↑
     DatabaseProvider.instance.settings   ← use this in UI/services
 ```
 
-**Key rule**: Business logic and UI must depend on the **abstract interface** (`ISettingsRepository`), never on `DriftSettingsRepository` or `AppDatabase` directly.
-
-### Adding a New Table
-
-#### Step 1 — Define the table class in `app_database.dart`
-
-```dart
-class ProductsTable extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get name => text().withLength(min: 1, max: 256)();
-  IntColumn get priceInPaisa => integer()();
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
-}
-```
-
-#### Step 2 — Register the table in `@DriftDatabase`
-
-```dart
-@DriftDatabase(tables: [SettingsTable, ProductsTable])   // ← add here
-class AppDatabase extends _$AppDatabase { ... }
-```
-
-#### Step 3 — Bump the schema version and add a migration
-
-```dart
-@override
-int get schemaVersion => 2;   // ← increment
-
-@override
-MigrationStrategy get migration => MigrationStrategy(
-  onCreate: (m) => m.createAll(),
-  onUpgrade: (m, from, to) async {
-    if (from < 2) await m.createTable(productsTable);
-  },
-);
-```
-
-#### Step 4 — Regenerate code
-
-```bash
-dart run build_runner build --delete-conflicting-outputs
-```
-
-#### Step 5 — Create abstract interface
-
-```dart
-// lib/core/database/repositories/products_repository.dart
-abstract interface class IProductsRepository {
-  Future<List<ProductEntry>> getAll();
-  Future<void> add(ProductEntry product);
-  Future<void> delete(int id);
-  Stream<List<ProductEntry>> watch();
-}
-```
-
-#### Step 6 — Create drift implementation
-
-```dart
-// lib/core/database/repositories/drift_products_repository.dart
-class DriftProductsRepository implements IProductsRepository {
-  const DriftProductsRepository(this._db);
-  final AppDatabase _db;
-  // implement using _db.select(_db.productsTable) etc.
-}
-```
-
-#### Step 7 — Expose via `DatabaseProvider`
-
-```dart
-// In DatabaseProvider
-final IProductsRepository products;
-
-DatabaseProvider._({required AppDatabase database})
-    : _database = database,
-      settings = DriftSettingsRepository(database),
-      products = DriftProductsRepository(database);   // ← add
-```
-
-### Using the Database in a Widget
-
-```dart
-// Read once
-final theme = await DatabaseProvider.instance.settings.get('theme_mode');
-
-// Reactive (StreamBuilder)
-StreamBuilder<String?>(
-  stream: DatabaseProvider.instance.settings.watch('theme_mode'),
-  builder: (context, snapshot) {
-    final mode = snapshot.data ?? 'system';
-    return Text('Theme: $mode');
-  },
-);
-
-// Write
-await DatabaseProvider.instance.settings.set('theme_mode', 'dark');
-```
+**Key rule**: Business logic and UI must depend on the **abstract interface** (`ISettingsRepository`, `ICategoryRepository`, `IMenuRepository`), never on `HiveSettingsRepository` or `Hive` boxes directly.
 
 ---
 
 ## 4. Platform-Specific DB Notes
 
-| Platform | Driver | Storage Location |
-|----------|--------|-----------------|
-| Android  | `NativeDatabase` (sqlite3_flutter_libs) | `/data/user/0/<pkg>/databases/mithai_wale.sqlite` |
-| iOS      | `NativeDatabase` (sqlite3_flutter_libs) | `<app docs>/mithai_wale.sqlite` |
-| Windows  | `NativeDatabase` (sqlite3_flutter_libs) | `%APPDATA%\mithai_wale\mithai_wale.sqlite` |
-| Web      | `WasmDatabase` (OPFS) | Browser Origin Private File System |
-
-### Web Setup (one-time)
-1. Copy `sqlite3.wasm` from the `sqlite3` package to `web/`
-2. Copy `drift_worker.js` from the `drift` package to `web/`
-3. These files are already referenced in `connection_web.dart`
+| Platform | Driver / Backend | Storage Location |
+|----------|------------------|-----------------|
+| Android  | Hive (Binary Key-Value) | Application Documents Directory |
+| iOS      | Hive (Binary Key-Value) | Application Documents Directory |
+| Windows  | Hive (Binary Key-Value) | Application Support Directory |
+| Web      | Hive (IndexedDB)        | Browser IndexedDB |
 
 ---
 

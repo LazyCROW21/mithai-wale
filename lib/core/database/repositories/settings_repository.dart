@@ -1,7 +1,7 @@
 /// Abstract interface for reading and writing application settings.
 ///
 /// Concrete implementations are provided per DB backend:
-/// - [DriftSettingsRepository] — backed by drift (SQLite / WASM)
+/// - [HiveSettingsRepository] — backed by Hive
 ///
 /// Consumers should depend on this interface, never on a concrete class,
 /// ensuring that swapping the underlying storage has zero impact on

@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/database/app_database.dart';
+import '../../core/database/models/category_model.dart';
+import '../../core/database/models/menu_item_model.dart';
 import '../../core/database/repositories/category_repository.dart';
 import '../../core/database/repositories/menu_repository.dart';
 import '../../core/di/service_locator.dart';

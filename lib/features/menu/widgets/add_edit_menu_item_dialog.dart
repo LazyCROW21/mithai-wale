@@ -1,8 +1,7 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/database/app_database.dart';
+import '../../../core/database/models/menu_item_model.dart';
 import '../../../core/layout/layout_extensions.dart';
 import '../menu_providers.dart';
 import 'manage_categories_dialog.dart';
@@ -81,8 +80,8 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
     if (widget.itemToEdit != null) {
       final updated = widget.itemToEdit!.copyWith(
         title: title,
-        description: Value(description.isEmpty ? null : description),
-        categoryId: Value(_selectedCategoryId),
+        description: description.isEmpty ? null : description,
+        categoryId: _selectedCategoryId,
         price: price,
         unit: _selectedUnit,
         isAvailable: _isAvailable,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/database/app_database.dart';
+import '../../../core/database/models/category_model.dart';
 import '../../../core/routing/router_key.dart';
 import '../../../core/routing/routes.dart';
 import '../menu_providers.dart';
@@ -110,9 +110,9 @@ class MenuMobileView extends ConsumerWidget {
                         itemCount: state.filteredItems.length,
                         itemBuilder: (context, i) {
                           final item = state.filteredItems[i];
-                          final category = state.categories.firstWhere(
-                            (c) => c.id == item.categoryId,
-                            orElse: () => Category(id: -1, name: 'Uncategorized', emoji: null, createdAt: DateTime.now()),
+                          final Category? category = state.categories.cast<Category?>().firstWhere(
+                            (c) => c?.id == item.categoryId,
+                            orElse: () => null,
                           );
 
                           return Card(
@@ -123,7 +123,7 @@ class MenuMobileView extends ConsumerWidget {
                                 children: [
                                   CircleAvatar(
                                     backgroundColor: cs.primaryContainer,
-                                    child: Text(category.emoji ?? '🍬', style: const TextStyle(fontSize: 20)),
+                                    child: Text(category?.emoji ?? '🍬', style: const TextStyle(fontSize: 20)),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
@@ -149,7 +149,7 @@ class MenuMobileView extends ConsumerWidget {
                                                 borderRadius: BorderRadius.circular(4),
                                               ),
                                               child: Text(
-                                                category.name,
+                                                category?.name ?? 'Uncategorized',
                                                 style: TextStyle(fontSize: 10, color: cs.onSecondaryContainer),
                                               ),
                                             ),

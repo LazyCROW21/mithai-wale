@@ -1,4 +1,4 @@
-import '../app_database.dart';
+import '../models/category_model.dart';
 
 abstract interface class ICategoryRepository {
   Future<List<Category>> getAll();

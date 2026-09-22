@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/database/app_database.dart';
+import '../../../core/database/models/category_model.dart';
 import '../../../core/routing/router_key.dart';
 import '../../../core/routing/routes.dart';
 import '../menu_providers.dart';
@@ -135,9 +135,9 @@ class MenuTabletView extends ConsumerWidget {
                               itemCount: state.filteredItems.length,
                               itemBuilder: (context, i) {
                                 final item = state.filteredItems[i];
-                                final category = state.categories.firstWhere(
-                                  (c) => c.id == item.categoryId,
-                                  orElse: () => Category(id: -1, name: 'Uncategorized', emoji: null, createdAt: DateTime.now()),
+                                final Category? category = state.categories.cast<Category?>().firstWhere(
+                                  (c) => c?.id == item.categoryId,
+                                  orElse: () => null,
                                 );
 
                                 return Card(
@@ -156,7 +156,7 @@ class MenuTabletView extends ConsumerWidget {
                                             CircleAvatar(
                                               radius: 18,
                                               backgroundColor: cs.primaryContainer,
-                                              child: Text(category.emoji ?? '🍬', style: const TextStyle(fontSize: 18)),
+                                              child: Text(category?.emoji ?? '🍬', style: const TextStyle(fontSize: 18)),
                                             ),
                                             const SizedBox(width: 8),
                                             Expanded(
@@ -173,7 +173,7 @@ class MenuTabletView extends ConsumerWidget {
                                                     ),
                                                   ),
                                                   Text(
-                                                    category.name,
+                                                    category?.name ?? 'Uncategorized',
                                                     style: Theme.of(context).textTheme.bodySmall,
                                                   ),
                                                 ],
