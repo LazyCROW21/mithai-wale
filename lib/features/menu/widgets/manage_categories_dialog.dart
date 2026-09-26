@@ -36,19 +36,16 @@ class ManageCategoriesSheet extends ConsumerStatefulWidget {
 
 class _ManageCategoriesSheetState extends ConsumerState<ManageCategoriesSheet> {
   final _nameController = TextEditingController();
-  final _emojiController = TextEditingController();
   Category? _editingCategory;
 
   @override
   void dispose() {
     _nameController.dispose();
-    _emojiController.dispose();
     super.dispose();
   }
 
   void _resetForm() {
     _nameController.clear();
-    _emojiController.clear();
     setState(() {
       _editingCategory = null;
     });
@@ -58,7 +55,6 @@ class _ManageCategoriesSheetState extends ConsumerState<ManageCategoriesSheet> {
     setState(() {
       _editingCategory = cat;
       _nameController.text = cat.name;
-      _emojiController.text = cat.emoji ?? '';
     });
   }
 
@@ -66,16 +62,14 @@ class _ManageCategoriesSheetState extends ConsumerState<ManageCategoriesSheet> {
     final name = _nameController.text.trim();
     if (name.isEmpty) return;
 
-    final emoji = _emojiController.text.trim();
     final vm = ref.read(menuViewModelProvider.notifier);
 
     if (_editingCategory != null) {
       await vm.updateCategory(_editingCategory!.copyWith(
         name: name,
-        emoji: emoji.isEmpty ? null : emoji,
       ));
     } else {
-      await vm.addCategory(name: name, emoji: emoji.isEmpty ? null : emoji);
+      await vm.addCategory(name: name);
     }
 
     _resetForm();
@@ -115,20 +109,6 @@ class _ManageCategoriesSheetState extends ConsumerState<ManageCategoriesSheet> {
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  SizedBox(
-                    width: 54,
-                    child: TextField(
-                      controller: _emojiController,
-                      textAlign: TextAlign.center,
-                      decoration: const InputDecoration(
-                        hintText: '🟡',
-                        labelText: 'Emoji',
-                        isDense: true,
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
                   Expanded(
                     child: TextField(
                       controller: _nameController,
@@ -176,7 +156,7 @@ class _ManageCategoriesSheetState extends ConsumerState<ManageCategoriesSheet> {
                         leading: CircleAvatar(
                           backgroundColor: cs.primaryContainer,
                           radius: 18,
-                          child: Text(cat.emoji ?? '🍬', style: const TextStyle(fontSize: 16)),
+                          child: const Icon(Icons.category_outlined, size: 18),
                         ),
                         title: Text(cat.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text('ID: #${cat.id}', style: TextStyle(fontSize: 11, color: cs.outline)),

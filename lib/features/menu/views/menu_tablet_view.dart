@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/models/category_model.dart';
 import '../../../core/routing/router_key.dart';
 import '../../../core/routing/routes.dart';
+import '../../cart/cart_providers.dart';
 import '../menu_providers.dart';
 import '../widgets/add_edit_menu_item_dialog.dart';
 import '../widgets/manage_categories_dialog.dart';
+import '../widgets/menu_item_card.dart';
 
 class MenuTabletView extends ConsumerWidget {
   const MenuTabletView({super.key});
@@ -24,18 +26,19 @@ class MenuTabletView extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
     final state = ref.watch(menuViewModelProvider);
     final vm = ref.read(menuViewModelProvider.notifier);
+    final cartCount = ref.watch(cartProvider.select((c) => c.totalUniqueItems));
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Menu Management', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           SizedBox(
-            width: 260,
+            width: 240,
             child: SearchBar(
               hintText: 'Search items…',
               leading: const Icon(Icons.search),
               onChanged: vm.setSearchQuery,
-              padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 16)),
+              padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 14)),
             ),
           ),
           const SizedBox(width: 8),
@@ -50,7 +53,17 @@ class MenuTabletView extends ConsumerWidget {
             icon: const Icon(Icons.add),
             label: const Text('Add Item'),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
+          IconButton(
+            tooltip: 'View Cart',
+            icon: Badge(
+              isLabelVisible: cartCount > 0,
+              label: Text('$cartCount'),
+              child: const Icon(Icons.shopping_cart_outlined),
+            ),
+            onPressed: () => AppNav.showAddToCart(),
+          ),
+          const SizedBox(width: 12),
         ],
       ),
       body: Row(
@@ -92,7 +105,7 @@ class MenuTabletView extends ConsumerWidget {
                           padding: const EdgeInsets.only(right: 8),
                           child: Center(
                             child: FilterChip(
-                              label: Text('${c.emoji ?? '🍬'} ${c.name}'),
+                              label: Text(c.name),
                               selected: state.selectedCategoryFilter == c.name,
                               onSelected: (_) => vm.setCategoryFilter(c.name),
                             ),
@@ -130,7 +143,7 @@ class MenuTabletView extends ConsumerWidget {
                                 crossAxisCount: 2,
                                 mainAxisSpacing: 12,
                                 crossAxisSpacing: 12,
-                                childAspectRatio: 1.4,
+                                childAspectRatio: 1.25,
                               ),
                               itemCount: state.filteredItems.length,
                               itemBuilder: (context, i) {
@@ -140,107 +153,27 @@ class MenuTabletView extends ConsumerWidget {
                                   orElse: () => null,
                                 );
 
-                                return Card(
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    side: BorderSide(color: cs.outlineVariant),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(14),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            CircleAvatar(
-                                              radius: 18,
-                                              backgroundColor: cs.primaryContainer,
-                                              child: Text(category?.emoji ?? '🍬', style: const TextStyle(fontSize: 18)),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    '#MW-${item.id.toString().padLeft(4, '0')}',
-                                                    style: TextStyle(
-                                                      fontSize: 11,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: cs.primary,
-                                                      fontFamily: 'monospace',
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    category?.name ?? 'Uncategorized',
-                                                    style: Theme.of(context).textTheme.bodySmall,
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            Switch(
-                                              value: item.isAvailable,
-                                              onChanged: (_) => vm.toggleAvailability(item),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          item.title,
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        if (item.description != null && item.description!.isNotEmpty) ...[
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            item.description!,
-                                            style: Theme.of(context).textTheme.bodySmall,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
+                                return MenuItemCard(
+                                  product: item,
+                                  category: category,
+                                  onEdit: () => showAddEditMenuItemDialog(context, itemToEdit: item),
+                                  onDelete: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        title: const Text('Delete Item?'),
+                                        content: Text('Are you sure you want to delete "${item.title}"?'),
+                                        actions: [
+                                          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+                                          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Delete')),
                                         ],
-                                        const Spacer(),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              '₹${item.price.toStringAsFixed(0)} / ${item.unit}',
-                                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: cs.primary),
-                                            ),
-                                            Row(
-                                              children: [
-                                                IconButton(
-                                                  icon: const Icon(Icons.edit_outlined, size: 20),
-                                                  onPressed: () => showAddEditMenuItemDialog(context, itemToEdit: item),
-                                                ),
-                                                IconButton(
-                                                  icon: Icon(Icons.delete_outline, size: 20, color: cs.error),
-                                                  onPressed: () async {
-                                                    final confirm = await showDialog<bool>(
-                                                      context: context,
-                                                      builder: (ctx) => AlertDialog(
-                                                        title: const Text('Delete Item?'),
-                                                        content: Text('Are you sure you want to delete "${item.title}"?'),
-                                                        actions: [
-                                                          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-                                                          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Delete')),
-                                                        ],
-                                                      ),
-                                                    );
-                                                    if (confirm == true) {
-                                                      await vm.deleteMenuItem(item.id);
-                                                    }
-                                                  },
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                      ),
+                                    );
+                                    if (confirm == true) {
+                                      await vm.deleteMenuItem(item.id);
+                                    }
+                                  },
+                                  onToggleAvailability: (_) => vm.toggleAvailability(item),
                                 );
                               },
                             ),

@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/models/category_model.dart';
 import '../../../core/routing/router_key.dart';
 import '../../../core/routing/routes.dart';
+import '../../cart/cart_providers.dart';
 import '../menu_providers.dart';
 import '../widgets/add_edit_menu_item_dialog.dart';
 import '../widgets/manage_categories_dialog.dart';
+import '../widgets/menu_item_card.dart';
 
 class MenuMobileView extends ConsumerWidget {
   const MenuMobileView({super.key});
@@ -32,6 +34,7 @@ class MenuMobileView extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
     final state = ref.watch(menuViewModelProvider);
     final vm = ref.read(menuViewModelProvider.notifier);
+    final cartCount = ref.watch(cartProvider.select((c) => c.totalUniqueItems));
 
     return Scaffold(
       appBar: AppBar(
@@ -41,6 +44,15 @@ class MenuMobileView extends ConsumerWidget {
             tooltip: 'Manage Categories',
             icon: const Icon(Icons.category_outlined),
             onPressed: () => showManageCategoriesModal(context),
+          ),
+          IconButton(
+            tooltip: 'View Cart',
+            icon: Badge(
+              isLabelVisible: cartCount > 0,
+              label: Text('$cartCount'),
+              child: const Icon(Icons.shopping_cart_outlined),
+            ),
+            onPressed: () => AppNav.showAddToCart(),
           ),
         ],
       ),
@@ -73,7 +85,7 @@ class MenuMobileView extends ConsumerWidget {
                 ...state.categories.map((c) => Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: FilterChip(
-                        label: Text('${c.emoji ?? '🍬'} ${c.name}'),
+                        label: Text(c.name),
                         selected: state.selectedCategoryFilter == c.name,
                         onSelected: (_) => vm.setCategoryFilter(c.name),
                       ),
@@ -115,106 +127,35 @@ class MenuMobileView extends ConsumerWidget {
                             orElse: () => null,
                           );
 
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Row(
-                                children: [
-                                  CircleAvatar(
-                                    backgroundColor: cs.primaryContainer,
-                                    child: Text(category?.emoji ?? '🍬', style: const TextStyle(fontSize: 20)),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text(
-                                              '#MW-${item.id.toString().padLeft(4, '0')}',
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
-                                                color: cs.primary,
-                                                fontFamily: 'monospace',
-                                              ),
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: cs.secondaryContainer,
-                                                borderRadius: BorderRadius.circular(4),
-                                              ),
-                                              child: Text(
-                                                category?.name ?? 'Uncategorized',
-                                                style: TextStyle(fontSize: 10, color: cs.onSecondaryContainer),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          item.title,
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                        ),
-                                        if (item.description != null && item.description!.isNotEmpty) ...[
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            item.description!,
-                                            style: Theme.of(context).textTheme.bodySmall,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          '₹${item.price.toStringAsFixed(0)} / ${item.unit}',
-                                          style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Column(
-                                    children: [
-                                      Switch(
-                                        value: item.isAvailable,
-                                        onChanged: (_) => vm.toggleAvailability(item),
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: MenuItemCard(
+                              product: item,
+                              category: category,
+                              onEdit: () => showAddEditMenuItemDialog(context, itemToEdit: item),
+                              onDelete: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text('Delete Item?'),
+                                    content: Text('Are you sure you want to delete "${item.title}"?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(ctx).pop(false),
+                                        child: const Text('Cancel'),
                                       ),
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          IconButton(
-                                            icon: const Icon(Icons.edit_outlined, size: 20),
-                                            onPressed: () => showAddEditMenuItemDialog(context, itemToEdit: item),
-                                          ),
-                                          IconButton(
-                                            icon: Icon(Icons.delete_outline, size: 20, color: cs.error),
-                                            onPressed: () async {
-                                              final confirm = await showDialog<bool>(
-                                                context: context,
-                                                builder: (ctx) => AlertDialog(
-                                                  title: const Text('Delete Item?'),
-                                                  content: Text('Are you sure you want to delete "${item.title}"?'),
-                                                  actions: [
-                                                    TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-                                                    FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Delete')),
-                                                  ],
-                                                ),
-                                              );
-                                              if (confirm == true) {
-                                                await vm.deleteMenuItem(item.id);
-                                              }
-                                            },
-                                          ),
-                                        ],
+                                      FilledButton(
+                                        onPressed: () => Navigator.of(ctx).pop(true),
+                                        child: const Text('Delete'),
                                       ),
                                     ],
                                   ),
-                                ],
-                              ),
+                                );
+                                if (confirm == true) {
+                                  await vm.deleteMenuItem(item.id);
+                                }
+                              },
+                              onToggleAvailability: (_) => vm.toggleAvailability(item),
                             ),
                           );
                         },

@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/database/models/category_model.dart';
+import '../../../core/database/models/menu_item_model.dart';
 import '../../../core/routing/router_key.dart';
 import '../../../core/routing/routes.dart';
+import '../../cart/cart_providers.dart';
 import '../shop_providers.dart';
+import '../shop_state.dart';
+import '../widgets/shop_quantity_control.dart';
 
 class ShopTabletView extends ConsumerWidget {
   const ShopTabletView({super.key});
@@ -19,8 +24,9 @@ class ShopTabletView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final selectedCategory = ref.watch(shopViewModelProvider.select((s) => s.selectedCategory));
+    final shopState = ref.watch(shopViewModelProvider);
     final vm = ref.read(shopViewModelProvider.notifier);
+    final cartCount = ref.watch(cartProvider.select((c) => c.totalUniqueItems));
 
     return Scaffold(
       appBar: AppBar(
@@ -37,7 +43,11 @@ class ShopTabletView extends ConsumerWidget {
           ),
           const SizedBox(width: 8),
           IconButton(
-            icon: const Icon(Icons.shopping_cart_outlined),
+            icon: Badge(
+              isLabelVisible: cartCount > 0,
+              label: Text('$cartCount'),
+              child: const Icon(Icons.shopping_cart_outlined),
+            ),
             onPressed: () => AppNav.showAddToCart(),
           ),
           const SizedBox(width: 8),
@@ -63,14 +73,21 @@ class ShopTabletView extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(
-                  width: 180,
+                  width: 200,
                   child: _CategoriesPanel(
-                    selectedCategory: selectedCategory,
+                    categories: shopState.categories,
+                    selectedCategory: shopState.selectedCategory,
                     onCategorySelected: vm.selectCategory,
                   ),
                 ),
                 const VerticalDivider(width: 1),
-                const Expanded(child: _ProductGrid(crossAxisCount: 3)),
+                Expanded(
+                  child: _ProductGrid(
+                    crossAxisCount: 3,
+                    products: shopState.availableProducts,
+                    shopState: shopState,
+                  ),
+                ),
               ],
             ),
           ),
@@ -78,22 +95,27 @@ class ShopTabletView extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => AppNav.showAddToCart(),
-        icon: const Icon(Icons.add_shopping_cart),
-        label: const Text('Add to Cart'),
+        icon: const Icon(Icons.shopping_cart),
+        label: const Text('Cart'),
       ),
     );
   }
 }
 
 class _CategoriesPanel extends StatelessWidget {
-  const _CategoriesPanel({required this.selectedCategory, required this.onCategorySelected});
+  const _CategoriesPanel({
+    required this.categories,
+    required this.selectedCategory,
+    required this.onCategorySelected,
+  });
+
+  final List<Category> categories;
   final String selectedCategory;
   final ValueChanged<String> onCategorySelected;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final categories = ['All', 'Ladoo', 'Barfi', 'Halwa', 'Peda', 'Rasgulla', 'Jalebi'];
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       children: [
@@ -102,15 +124,26 @@ class _CategoriesPanel extends StatelessWidget {
           child: Text('Categories', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.outline)),
         ),
         const SizedBox(height: 8),
+        ListTile(
+          dense: true,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          leading: const Text('✨', style: TextStyle(fontSize: 18)),
+          title: const Text('All Sweets'),
+          selected: selectedCategory == 'All',
+          selectedColor: cs.onPrimaryContainer,
+          selectedTileColor: cs.primaryContainer,
+          onTap: () => onCategorySelected('All'),
+        ),
         ...categories.map(
           (c) => ListTile(
             dense: true,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            title: Text(c),
-            selected: c == selectedCategory,
+            leading: Text(c.emoji ?? '🍬', style: const TextStyle(fontSize: 18)),
+            title: Text(c.name),
+            selected: c.name.toLowerCase() == selectedCategory.toLowerCase(),
             selectedColor: cs.onPrimaryContainer,
             selectedTileColor: cs.primaryContainer,
-            onTap: () => onCategorySelected(c),
+            onTap: () => onCategorySelected(c.name),
           ),
         ),
       ],
@@ -118,18 +151,40 @@ class _CategoriesPanel extends StatelessWidget {
   }
 }
 
-class _ProductGrid extends StatelessWidget {
-  const _ProductGrid({required this.crossAxisCount});
-  final int crossAxisCount;
+class _ProductGrid extends ConsumerWidget {
+  const _ProductGrid({
+    required this.crossAxisCount,
+    required this.products,
+    required this.shopState,
+  });
 
-  static const List<({String emoji, String id, String name, int price})> _products = [];
+  final int crossAxisCount;
+  final List<MenuItem> products;
+  final ShopState shopState;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    if (_products.isEmpty) {
-      return const Center(
-        child: Text('No products available in shop catalog', style: TextStyle(color: Colors.grey)),
+    if (products.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.inventory_2_outlined, size: 56, color: cs.outline),
+            const SizedBox(height: 12),
+            const Text(
+              'No products available in shop catalog',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              shopState.selectedCategory != 'All'
+                  ? 'No available sweets in category "${shopState.selectedCategory}"'
+                  : 'Products added in Menu will appear here',
+              style: TextStyle(color: cs.outline, fontSize: 13),
+            ),
+          ],
+        ),
       );
     }
     return GridView.builder(
@@ -138,49 +193,52 @@ class _ProductGrid extends StatelessWidget {
         crossAxisCount: crossAxisCount,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 0.82,
+        childAspectRatio: 0.78,
       ),
-      itemCount: _products.length,
+      itemCount: products.length,
       itemBuilder: (context, i) {
-        final p = _products[i];
-        return GestureDetector(
-          onTap: () => AppNav.showProductDetail(p.id),
-          child: Card(
-            clipBehavior: Clip.antiAlias,
-            elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: cs.outlineVariant)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Container(
-                    color: cs.surfaceContainerHighest,
-                    child: Center(child: Text(p.emoji, style: const TextStyle(fontSize: 56))),
-                  ),
+        final p = products[i];
+        final cat = shopState.getCategoryFor(p);
+        final emoji = cat?.emoji ?? '🍬';
+
+        return Card(
+          clipBehavior: Clip.antiAlias,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: cs.outlineVariant)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  color: cs.surfaceContainerHighest,
+                  child: Center(child: Text(emoji, style: const TextStyle(fontSize: 56))),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(p.name, style: Theme.of(context).textTheme.labelLarge, maxLines: 1, overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('₹${p.price}/kg', style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold)),
-                          IconButton.filledTonal(
-                            iconSize: 18,
-                            onPressed: () => AppNav.showAddToCart(),
-                            icon: const Icon(Icons.add),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(p.title, style: Theme.of(context).textTheme.labelLarge, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '₹${p.price.toStringAsFixed(p.price.truncateToDouble() == p.price ? 0 : 2)}/${p.unit}',
+                          style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold),
+                        ),
+                        ShopQuantityControl(
+                          product: p,
+                          compact: true,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },

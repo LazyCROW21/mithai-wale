@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/models/category_model.dart';
 import '../../../core/routing/router_key.dart';
 import '../../../core/routing/routes.dart';
+import '../../cart/cart_providers.dart';
 import '../menu_providers.dart';
 import '../widgets/add_edit_menu_item_dialog.dart';
 import '../widgets/manage_categories_dialog.dart';
+import '../widgets/menu_item_card.dart';
 
 class MenuDesktopView extends ConsumerWidget {
   const MenuDesktopView({super.key});
@@ -26,6 +28,7 @@ class MenuDesktopView extends ConsumerWidget {
     final cs = theme.colorScheme;
     final state = ref.watch(menuViewModelProvider);
     final vm = ref.read(menuViewModelProvider.notifier);
+    final cartCount = ref.watch(cartProvider.select((c) => c.totalUniqueItems));
 
     return Scaffold(
       body: Row(
@@ -104,6 +107,16 @@ class MenuDesktopView extends ConsumerWidget {
                         icon: const Icon(Icons.add),
                         label: const Text('Add Menu Item'),
                       ),
+                      const SizedBox(width: 12),
+                      FilledButton.tonalIcon(
+                        onPressed: () => AppNav.showAddToCart(),
+                        icon: Badge(
+                          isLabelVisible: cartCount > 0,
+                          label: Text('$cartCount'),
+                          child: const Icon(Icons.shopping_cart_outlined, size: 20),
+                        ),
+                        label: const Text('Cart'),
+                      ),
                     ],
                   ),
                 ),
@@ -132,7 +145,7 @@ class MenuDesktopView extends ConsumerWidget {
                           padding: const EdgeInsets.only(right: 8),
                           child: Center(
                             child: FilterChip(
-                              label: Text('${c.emoji ?? '🍬'} ${c.name}'),
+                              label: Text(c.name),
                               selected: state.selectedCategoryFilter == c.name,
                               onSelected: (_) => vm.setCategoryFilter(c.name),
                             ),
@@ -172,7 +185,7 @@ class MenuDesktopView extends ConsumerWidget {
                                 crossAxisCount: 3,
                                 mainAxisSpacing: 16,
                                 crossAxisSpacing: 16,
-                                childAspectRatio: 1.45,
+                                childAspectRatio: 1.25,
                               ),
                               itemCount: state.filteredItems.length,
                               itemBuilder: (context, i) {
@@ -182,115 +195,27 @@ class MenuDesktopView extends ConsumerWidget {
                                   orElse: () => null,
                                 );
 
-                                return Card(
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    side: BorderSide(color: cs.outlineVariant),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            CircleAvatar(
-                                              radius: 20,
-                                              backgroundColor: cs.primaryContainer,
-                                              child: Text(category?.emoji ?? '🍬', style: const TextStyle(fontSize: 20)),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    '#MW-${item.id.toString().padLeft(4, '0')}',
-                                                    style: TextStyle(
-                                                      fontSize: 11,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: cs.primary,
-                                                      fontFamily: 'monospace',
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    category?.name ?? 'Uncategorized',
-                                                    style: theme.textTheme.bodySmall?.copyWith(color: cs.outline),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            Tooltip(
-                                              message: item.isAvailable ? 'In Stock' : 'Out of Stock',
-                                              child: Switch(
-                                                value: item.isAvailable,
-                                                onChanged: (_) => vm.toggleAvailability(item),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Text(
-                                          item.title,
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        if (item.description != null && item.description!.isNotEmpty) ...[
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            item.description!,
-                                            style: theme.textTheme.bodySmall,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
+                                return MenuItemCard(
+                                  product: item,
+                                  category: category,
+                                  onEdit: () => showAddEditMenuItemDialog(context, itemToEdit: item),
+                                  onDelete: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        title: const Text('Delete Item?'),
+                                        content: Text('Are you sure you want to delete "${item.title}"?'),
+                                        actions: [
+                                          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+                                          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Delete')),
                                         ],
-                                        const Spacer(),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              '₹${item.price.toStringAsFixed(0)} / ${item.unit}',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 18,
-                                                color: cs.primary,
-                                              ),
-                                            ),
-                                            Row(
-                                              children: [
-                                                IconButton.outlined(
-                                                  icon: const Icon(Icons.edit_outlined, size: 18),
-                                                  onPressed: () => showAddEditMenuItemDialog(context, itemToEdit: item),
-                                                ),
-                                                const SizedBox(width: 6),
-                                                IconButton.outlined(
-                                                  icon: Icon(Icons.delete_outline, size: 18, color: cs.error),
-                                                  onPressed: () async {
-                                                    final confirm = await showDialog<bool>(
-                                                      context: context,
-                                                      builder: (ctx) => AlertDialog(
-                                                        title: const Text('Delete Item?'),
-                                                        content: Text('Are you sure you want to delete "${item.title}"?'),
-                                                        actions: [
-                                                          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-                                                          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Delete')),
-                                                        ],
-                                                      ),
-                                                    );
-                                                    if (confirm == true) {
-                                                      await vm.deleteMenuItem(item.id);
-                                                    }
-                                                  },
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                      ),
+                                    );
+                                    if (confirm == true) {
+                                      await vm.deleteMenuItem(item.id);
+                                    }
+                                  },
+                                  onToggleAvailability: (_) => vm.toggleAvailability(item),
                                 );
                               },
                             ),

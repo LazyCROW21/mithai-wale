@@ -212,7 +212,7 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
                       ...categories.map(
                         (cat) => DropdownMenuItem<int?>(
                           value: cat.id,
-                          child: Text('${cat.emoji ?? '🍬'} ${cat.name}'),
+                          child: Text(cat.name),
                         ),
                       ),
                     ],

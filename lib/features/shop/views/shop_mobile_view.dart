@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/database/models/category_model.dart';
+import '../../../core/database/models/menu_item_model.dart';
 import '../../../core/routing/router_key.dart';
 import '../../../core/routing/routes.dart';
+import '../../cart/cart_providers.dart';
 import '../shop_providers.dart';
+import '../widgets/shop_quantity_control.dart';
 
 class ShopMobileView extends ConsumerWidget {
   const ShopMobileView({super.key});
@@ -27,7 +31,14 @@ class ShopMobileView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final shopState = ref.watch(shopViewModelProvider);
     final vm = ref.read(shopViewModelProvider.notifier);
+
+    final categories = shopState.categories;
+    final selectedCategory = shopState.selectedCategory;
+    final products = shopState.availableProducts;
+
+    final cartCount = ref.watch(cartProvider.select((c) => c.totalUniqueItems));
 
     return Scaffold(
       appBar: AppBar(
@@ -35,7 +46,11 @@ class ShopMobileView extends ConsumerWidget {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.shopping_cart_outlined),
+            icon: Badge(
+              isLabelVisible: cartCount > 0,
+              label: Text('$cartCount'),
+              child: const Icon(Icons.shopping_cart_outlined),
+            ),
             onPressed: () => AppNav.showAddToCart(),
           ),
         ],
@@ -53,29 +68,73 @@ class ShopMobileView extends ConsumerWidget {
           Text('Categories', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           SizedBox(
-            height: 90,
+            height: 94,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: _categories.length,
+              itemCount: categories.length + 1, // +1 for 'All'
               separatorBuilder: (context, index) => const SizedBox(width: 12),
-              itemBuilder: (context, i) => _CategoryChip(
-                label: _categories[i].label,
-                emoji: _categories[i].emoji,
-                onTap: () => vm.selectCategory(_categories[i].label),
-              ),
+              itemBuilder: (context, i) {
+                if (i == 0) {
+                  final isSelected = selectedCategory == 'All';
+                  return _CategoryChip(
+                    label: 'All',
+                    emoji: '✨',
+                    isSelected: isSelected,
+                    onTap: () => vm.selectCategory('All'),
+                  );
+                }
+                final cat = categories[i - 1];
+                final isSelected = selectedCategory.toLowerCase() == cat.name.toLowerCase();
+                return _CategoryChip(
+                  label: cat.name,
+                  emoji: cat.emoji ?? '🍬',
+                  isSelected: isSelected,
+                  onTap: () => vm.selectCategory(cat.name),
+                );
+              },
             ),
           ),
           const SizedBox(height: 20),
-          Text('Available Sweets', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Available Sweets', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                '${products.length} items',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
-          if (_demoProducts.isEmpty)
+          if (products.isEmpty)
             Card(
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
-              child: const Padding(
-                padding: EdgeInsets.all(32),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(32),
                 child: Center(
-                  child: Text('No products available in shop catalog', style: TextStyle(color: Colors.grey)),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.inventory_2_outlined, size: 48, color: Theme.of(context).colorScheme.outline),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'No available products found',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        selectedCategory != 'All'
+                            ? 'No available sweets in category "$selectedCategory"'
+                            : 'Products added in Menu will appear here',
+                        style: const TextStyle(color: Colors.grey, fontSize: 13),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             )
@@ -87,10 +146,17 @@ class ShopMobileView extends ConsumerWidget {
                 crossAxisCount: 2,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: 0.78,
+                childAspectRatio: 0.70,
               ),
-              itemCount: _demoProducts.length,
-              itemBuilder: (context, i) => _ProductCard(product: _demoProducts[i]),
+              itemCount: products.length,
+              itemBuilder: (context, i) {
+                final product = products[i];
+                final category = shopState.getCategoryFor(product);
+                return _ProductCard(
+                  product: product,
+                  category: category,
+                );
+              },
             ),
         ],
       ),
@@ -109,106 +175,116 @@ class ShopMobileView extends ConsumerWidget {
 }
 
 class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({required this.label, required this.emoji, this.onTap});
+  const _CategoryChip({
+    required this.label,
+    required this.emoji,
+    this.isSelected = false,
+    this.onTap,
+  });
+
   final String label;
   final String emoji;
+  final bool isSelected;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
-          Container(
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer,
+              color: isSelected ? cs.primary : cs.primaryContainer,
               borderRadius: BorderRadius.circular(16),
+              border: isSelected ? Border.all(color: cs.onPrimary, width: 2) : null,
+              boxShadow: isSelected
+                  ? [BoxShadow(color: cs.primary.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3))]
+                  : null,
             ),
             child: Center(child: Text(emoji, style: const TextStyle(fontSize: 28))),
           ),
           const SizedBox(height: 4),
-          Text(label, style: Theme.of(context).textTheme.labelSmall),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected ? cs.primary : null,
+                ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
   }
 }
 
-class _ProductCard extends StatelessWidget {
-  const _ProductCard({required this.product});
-  final _Product product;
+class _ProductCard extends ConsumerWidget {
+  const _ProductCard({
+    required this.product,
+    this.category,
+  });
+
+  final MenuItem product;
+  final Category? category;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: () => AppNav.showProductDetail(product.id),
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Container(
-                color: cs.surfaceContainerHighest,
-                child: Center(child: Text(product.emoji, style: const TextStyle(fontSize: 48))),
-              ),
+    final emoji = category?.emoji ?? '🍬';
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: cs.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              color: cs.surfaceContainerHighest,
+              child: Center(child: Text(emoji, style: const TextStyle(fontSize: 48))),
             ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(product.name, style: Theme.of(context).textTheme.labelLarge, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 2),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('₹${product.price}/${product.unit}', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.primary, fontWeight: FontWeight.bold)),
-                      IconButton.filledTonal(
-                        iconSize: 16,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                        onPressed: () => AppNav.showAddToCart(),
-                        icon: const Icon(Icons.add),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.title,
+                  style: Theme.of(context).textTheme.labelLarge,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '₹${product.price.toStringAsFixed(product.price.truncateToDouble() == product.price ? 0 : 2)}/${product.unit}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: cs.primary,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 6),
+                ShopQuantityControl(
+                  product: product,
+                  compact: true,
+                  fullWidth: true,
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
-
-class _Category {
-  const _Category({required this.label, required this.emoji});
-  final String label;
-  final String emoji;
-}
-
-class _Product {
-  const _Product({required this.id, required this.name, required this.price, required this.emoji, required this.unit});
-  final String id;
-  final String name;
-  final int price;
-  final String emoji;
-  final String unit;
-}
-
-const _categories = [
-  _Category(label: 'Ladoo', emoji: '🟡'),
-  _Category(label: 'Barfi', emoji: '🍬'),
-  _Category(label: 'Halwa', emoji: '🍮'),
-  _Category(label: 'Peda', emoji: '🟤'),
-  _Category(label: 'Rasgulla', emoji: '⚪'),
-  _Category(label: 'Jalebi', emoji: '🌀'),
-];
-
-const List<_Product> _demoProducts = [];

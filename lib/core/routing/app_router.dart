@@ -32,6 +32,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/cart/widgets/cart_summary_sheet.dart';
 import '../../features/home/home_page.dart';
 import '../../features/menu/menu_page.dart';
 import '../../features/orders/orders_page.dart';
@@ -170,7 +171,7 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (context, state) => ModalBottomSheetPage(
         key: state.pageKey,
         name: state.name,
-        child: const _AddToCartSheet(),
+        child: const CartSummarySheet(),
       ),
     ),
 
@@ -250,33 +251,6 @@ class _ProductDetailSheet extends StatelessWidget {
   }
 }
 
-class _AddToCartSheet extends StatelessWidget {
-  const _AddToCartSheet();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.viewInsetsOf(context).bottom + 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Add to Cart', style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 16),
-          const Text('Add-to-cart sheet — replace with real implementation.'),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(child: OutlinedButton(onPressed: AppNav.pop, child: const Text('Cancel'))),
-              const SizedBox(width: 12),
-              Expanded(child: FilledButton(onPressed: AppNav.pop, child: const Text('Add'))),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _ConfirmLogoutDialog extends StatelessWidget {
   const _ConfirmLogoutDialog();

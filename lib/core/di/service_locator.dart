@@ -20,6 +20,7 @@ library;
 import 'package:get_it/get_it.dart';
 
 import '../database/db_provider.dart';
+import '../database/repositories/cart_repository.dart';
 import '../database/repositories/category_repository.dart';
 import '../database/repositories/menu_repository.dart';
 import '../database/repositories/settings_repository.dart';
@@ -39,6 +40,9 @@ Future<void> setupServiceLocator() async {
   );
   sl.registerLazySingleton<IMenuRepository>(
     () => DatabaseProvider.instance.menu,
+  );
+  sl.registerLazySingleton<ICartRepository>(
+    () => DatabaseProvider.instance.cart,
   );
 
   // ── Services ──────────────────────────────────────────────────────────────

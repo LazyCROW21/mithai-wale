@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/database/models/category_model.dart';
+import '../../../core/database/models/menu_item_model.dart';
 import '../../../core/routing/router_key.dart';
 import '../../../core/routing/routes.dart';
+import '../../cart/cart_providers.dart';
+import '../../cart/models/cart_item_model.dart';
 import '../shop_providers.dart';
+import '../shop_state.dart';
+import '../widgets/shop_quantity_control.dart';
 
 class ShopDesktopView extends ConsumerWidget {
   const ShopDesktopView({super.key});
@@ -21,7 +27,7 @@ class ShopDesktopView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final selectedCategory = ref.watch(shopViewModelProvider.select((s) => s.selectedCategory));
+    final shopState = ref.watch(shopViewModelProvider);
     final vm = ref.read(shopViewModelProvider.notifier);
 
     return Scaffold(
@@ -73,10 +79,16 @@ class ShopDesktopView extends ConsumerWidget {
             child: Column(
               children: [
                 _DesktopToolbar(
-                  selectedCategory: selectedCategory,
+                  categories: shopState.categories,
+                  selectedCategory: shopState.selectedCategory,
                   onCategoryChanged: vm.selectCategory,
                 ),
-                const Expanded(child: _DesktopProductGrid()),
+                Expanded(
+                  child: _DesktopProductGrid(
+                    products: shopState.availableProducts,
+                    shopState: shopState,
+                  ),
+                ),
               ],
             ),
           ),
@@ -89,15 +101,21 @@ class ShopDesktopView extends ConsumerWidget {
 }
 
 class _DesktopToolbar extends StatelessWidget {
-  const _DesktopToolbar({required this.selectedCategory, required this.onCategoryChanged});
+  const _DesktopToolbar({
+    required this.categories,
+    required this.selectedCategory,
+    required this.onCategoryChanged,
+  });
+
+  final List<Category> categories;
   final String selectedCategory;
   final ValueChanged<String> onCategoryChanged;
-
-  static const _categories = ['All', 'Ladoo', 'Barfi', 'Halwa', 'Peda', 'Rasgulla', 'Jalebi'];
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final categoryList = ['All', ...categories.map((c) => c.name)];
+
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -109,15 +127,25 @@ class _DesktopToolbar extends StatelessWidget {
           Expanded(
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: _categories.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 4),
+              itemCount: categoryList.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 6),
               itemBuilder: (context, i) {
-                final cat = _categories[i];
-                final selected = cat == selectedCategory;
+                final catName = categoryList[i];
+                final selected = catName.toLowerCase() == selectedCategory.toLowerCase();
+                String labelText = catName;
+                if (i > 0) {
+                  final catObj = categories[i - 1];
+                  if (catObj.emoji != null && catObj.emoji!.isNotEmpty) {
+                    labelText = '${catObj.emoji} $catName';
+                  }
+                } else {
+                  labelText = '✨ All';
+                }
+
                 return FilterChip(
-                  label: Text(cat),
+                  label: Text(labelText),
                   selected: selected,
-                  onSelected: (_) => onCategoryChanged(cat),
+                  onSelected: (_) => onCategoryChanged(catName),
                 );
               },
             ),
@@ -128,17 +156,38 @@ class _DesktopToolbar extends StatelessWidget {
   }
 }
 
-class _DesktopProductGrid extends StatelessWidget {
-  const _DesktopProductGrid();
+class _DesktopProductGrid extends ConsumerWidget {
+  const _DesktopProductGrid({
+    required this.products,
+    required this.shopState,
+  });
 
-  static const List<({String emoji, String id, String name, int price, String unit})> _products = [];
+  final List<MenuItem> products;
+  final ShopState shopState;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    if (_products.isEmpty) {
-      return const Center(
-        child: Text('No products available in shop catalog', style: TextStyle(color: Colors.grey)),
+    if (products.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.inventory_2_outlined, size: 64, color: cs.outline),
+            const SizedBox(height: 16),
+            const Text(
+              'No products available in shop catalog',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              shopState.selectedCategory != 'All'
+                  ? 'No available sweets in category "${shopState.selectedCategory}"'
+                  : 'Products added in Menu will appear here',
+              style: TextStyle(color: cs.outline, fontSize: 14),
+            ),
+          ],
+        ),
       );
     }
     return GridView.builder(
@@ -147,50 +196,50 @@ class _DesktopProductGrid extends StatelessWidget {
         crossAxisCount: 3,
         mainAxisSpacing: 16,
         crossAxisSpacing: 16,
-        childAspectRatio: 0.85,
+        childAspectRatio: 0.82,
       ),
-      itemCount: _products.length,
+      itemCount: products.length,
       itemBuilder: (context, i) {
-        final p = _products[i];
-        return GestureDetector(
-          onTap: () => AppNav.showProductDetail(p.id),
-          child: Card(
-            clipBehavior: Clip.antiAlias,
-            elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: cs.outlineVariant)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Container(
-                    color: cs.surfaceContainerHighest,
-                    child: Center(child: Text(p.emoji, style: const TextStyle(fontSize: 56))),
-                  ),
+        final p = products[i];
+        final cat = shopState.getCategoryFor(p);
+        final emoji = cat?.emoji ?? '🍬';
+
+        return Card(
+          clipBehavior: Clip.antiAlias,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: cs.outlineVariant)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  color: cs.surfaceContainerHighest,
+                  child: Center(child: Text(emoji, style: const TextStyle(fontSize: 56))),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(p.name, style: Theme.of(context).textTheme.labelLarge, maxLines: 1, overflow: TextOverflow.ellipsis),
-                      Text(p.unit, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.outline)),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('₹${p.price}', style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold, fontSize: 16)),
-                          FilledButton.tonal(
-                            onPressed: () => AppNav.showAddToCart(),
-                            style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), minimumSize: Size.zero),
-                            child: const Text('Add to Cart'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(p.title, style: Theme.of(context).textTheme.labelLarge, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(p.unit, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.outline)),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '₹${p.price.toStringAsFixed(p.price.truncateToDouble() == p.price ? 0 : 2)}',
+                          style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        ShopQuantityControl(product: p),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
@@ -198,16 +247,15 @@ class _DesktopProductGrid extends StatelessWidget {
   }
 }
 
-class _CartPanel extends StatelessWidget {
+class _CartPanel extends ConsumerWidget {
   const _CartPanel();
 
-  static const List<({String emoji, String name, int price, int qty})> _cartItems = [];
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final total = _cartItems.fold<int>(0, (sum, item) => sum + item.price * item.qty);
+    final cart = ref.watch(cartProvider);
+    final cartItems = cart.items.values.toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,44 +266,39 @@ class _CartPanel extends StatelessWidget {
           decoration: BoxDecoration(color: cs.surface, border: Border(bottom: BorderSide(color: cs.outlineVariant))),
           child: Row(
             children: [
-              const Icon(Icons.shopping_cart_outlined),
-              const SizedBox(width: 8),
               Text('Cart Summary', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
               const Spacer(),
-              Badge(label: Text('${_cartItems.length}'), child: const SizedBox.shrink()),
+              Badge(
+                isLabelVisible: cart.isNotEmpty,
+                label: Text('${cart.totalUniqueItems}'),
+                child: const SizedBox.shrink(),
+              ),
             ],
           ),
         ),
         Expanded(
-          child: _cartItems.isEmpty
+          child: cart.isEmpty
               ? const Center(
                   child: Text('Your cart is empty', style: TextStyle(color: Colors.grey)),
                 )
               : ListView.separated(
                   padding: const EdgeInsets.all(16),
-                  itemCount: _cartItems.length,
+                  itemCount: cartItems.length,
                   separatorBuilder: (context, index) => const Divider(),
                   itemBuilder: (context, i) {
-                    final item = _cartItems[i];
+                    final cartItem = cartItems[i];
                     return Row(
                       children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
-                          child: Center(child: Text(item.emoji, style: const TextStyle(fontSize: 24))),
-                        ),
-                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(item.name, style: theme.textTheme.labelMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
-                              Text('₹${item.price} × ${item.qty}', style: theme.textTheme.bodySmall?.copyWith(color: cs.outline)),
+                              Text(cartItem.item.title, style: theme.textTheme.labelMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+                              Text(cartItem.summarySubtitle, style: theme.textTheme.bodySmall?.copyWith(color: cs.outline)),
                             ],
                           ),
                         ),
-                        Text('₹${item.price * item.qty}', style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold)),
+                        Text('₹${CartItem.formatNumber(cartItem.totalPrice)}', style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold)),
                       ],
                     );
                   },
@@ -269,12 +312,12 @@ class _CartPanel extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('Total Amount', style: theme.textTheme.titleMedium),
-                  Text('₹$total', style: theme.textTheme.titleMedium?.copyWith(color: cs.primary, fontWeight: FontWeight.bold)),
+                  Text('₹${CartItem.formatNumber(cart.totalPrice)}', style: theme.textTheme.titleMedium?.copyWith(color: cs.primary, fontWeight: FontWeight.bold)),
                 ],
               ),
               const SizedBox(height: 12),
               FilledButton.icon(
-                onPressed: _cartItems.isEmpty ? null : () => AppNav.showAddToCart(),
+                onPressed: cart.isEmpty ? null : () => AppNav.showAddToCart(),
                 icon: const Icon(Icons.payment),
                 label: const Text('Checkout Order'),
                 style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
