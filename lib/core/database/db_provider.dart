@@ -9,8 +9,10 @@ import 'repositories/category_repository.dart';
 import 'repositories/hive_cart_repository.dart';
 import 'repositories/hive_category_repository.dart';
 import 'repositories/hive_menu_repository.dart';
+import 'repositories/hive_orders_repository.dart';
 import 'repositories/hive_settings_repository.dart';
 import 'repositories/menu_repository.dart';
+import 'repositories/orders_repository.dart';
 import 'repositories/settings_repository.dart';
 
 /// Central access point for all database repositories (Hive-backed).
@@ -20,10 +22,12 @@ class DatabaseProvider {
     required Box<Map> categoriesBox,
     required Box<Map> menuBox,
     required Box<Map> cartBox,
+    required Box<Map> ordersBox,
   }) : settings = HiveSettingsRepository(settingsBox),
        categories = HiveCategoryRepository(categoriesBox),
        menu = HiveMenuRepository(menuBox),
-       cart = HiveCartRepository(cartBox);
+       cart = HiveCartRepository(cartBox),
+       orders = HiveOrdersRepository(ordersBox);
 
   // ── Repositories ────────────────────────────────────────────────────────────
 
@@ -38,6 +42,9 @@ class DatabaseProvider {
 
   /// Shopping cart persistence repository.
   final ICartRepository cart;
+
+  /// Orders management repository.
+  final IOrdersRepository orders;
 
   // ── Lifecycle ────────────────────────────────────────────────────────────────
 
@@ -62,12 +69,14 @@ class DatabaseProvider {
     final categoriesBox = await Hive.openBox<Map>('categories');
     final menuBox = await Hive.openBox<Map>('menu_items');
     final cartBox = await Hive.openBox<Map>('cart_items');
+    final ordersBox = await Hive.openBox<Map>('orders');
 
     final provider = DatabaseProvider._(
       settingsBox: settingsBox,
       categoriesBox: categoriesBox,
       menuBox: menuBox,
       cartBox: cartBox,
+      ordersBox: ordersBox,
     );
 
     await provider._runMigrations();
@@ -85,6 +94,14 @@ class DatabaseProvider {
   Future<void> _runMigrations() async {
     const migrationKey = 'db_migration_initialized';
     final isMigrated = await settings.get(migrationKey);
+
+    // Clean up any legacy dummy demo orders
+    final existingOrders = await orders.getAll();
+    for (final o in existingOrders) {
+      if (o.id == '#ORD-1001' || o.id == '#ORD-1002' || o.id == '#ORD-1003') {
+        await orders.delete(o.id);
+      }
+    }
 
     // If migrations have already run once on DB creation, do not re-run.
     if (isMigrated == 'true') {

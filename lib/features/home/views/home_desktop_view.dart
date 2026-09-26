@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/routing/router_key.dart';
 import '../../../core/routing/routes.dart';
 import '../home_providers.dart';
+import '../widgets/home_kpi_card.dart';
+import '../widgets/menu_items_to_build_card.dart';
+import '../widgets/order_highlight_section.dart';
 
 class HomeDesktopView extends ConsumerWidget {
   const HomeDesktopView({super.key});
@@ -17,6 +20,12 @@ class HomeDesktopView extends ConsumerWidget {
     (icon: Icons.settings_outlined, selectedIcon: Icons.settings, label: 'Settings', route: AppRoutes.settings),
   ];
 
+  static String _formatCurrentDate() {
+    final now = DateTime.now();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${now.day} ${months[now.month - 1]} ${now.year}';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -26,6 +35,7 @@ class HomeDesktopView extends ConsumerWidget {
     return Scaffold(
       body: Row(
         children: [
+          // Left Navigation Drawer
           NavigationDrawer(
             selectedIndex: 0, // Home Dashboard index
             onDestinationSelected: (i) => AppNav.go(_navItems[i].route),
@@ -34,7 +44,10 @@ class HomeDesktopView extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(28, 24, 16, 10),
                 child: Text(
                   'मिठाई वाले',
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: cs.primary),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: cs.primary,
+                  ),
                 ),
               ),
               const Padding(
@@ -59,7 +72,7 @@ class HomeDesktopView extends ConsumerWidget {
           ),
           const VerticalDivider(width: 1),
 
-          // Main Content
+          // Main Content Area
           Expanded(
             child: Column(
               children: [
@@ -69,14 +82,27 @@ class HomeDesktopView extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 32),
                   decoration: BoxDecoration(
                     color: cs.surface,
-                    border: Border(bottom: BorderSide(color: cs.outlineVariant)),
+                    border: Border(bottom: BorderSide(color: cs.outlineVariant.withAlpha(100))),
                   ),
                   child: Row(
                     children: [
-                      Text('Business Dashboard', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                      Text(
+                        'Business Dashboard',
+                        style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(width: 12),
-                      Chip(label: const Text('15 Sep 2026'), backgroundColor: cs.surfaceContainerHighest),
+                      Chip(
+                        avatar: Icon(Icons.calendar_today, size: 14, color: cs.primary),
+                        label: Text(_formatCurrentDate()),
+                        backgroundColor: cs.surfaceContainerHighest,
+                      ),
                       const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.refresh),
+                        tooltip: 'Refresh Dashboard Data',
+                        onPressed: () => ref.read(homeViewModelProvider.notifier).refreshDashboard(),
+                      ),
+                      const SizedBox(width: 8),
                       FilledButton.icon(
                         onPressed: () => AppNav.go(AppRoutes.shop),
                         icon: const Icon(Icons.add_shopping_cart),
@@ -86,192 +112,73 @@ class HomeDesktopView extends ConsumerWidget {
                   ),
                 ),
 
-                // Dashboard Main Body
+                // Dashboard Main Body Scrollable
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.all(32),
                     children: [
-                      // Top 3 Summary Cards
+                      // Top 3 KPI Metric Cards
                       Row(
                         children: [
-                          // Card 1: Money to collect
+                          // Card 1: Today's Money Collection
                           Expanded(
-                            child: Card(
-                              color: cs.primaryContainer,
-                              elevation: 0,
-                              child: Padding(
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Money to Collect Today', style: TextStyle(fontWeight: FontWeight.bold, color: cs.onPrimaryContainer)),
-                                    const SizedBox(height: 8),
-                                    Text('₹${state.totalMoneyToCollect.toStringAsFixed(0)}', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: cs.onPrimaryContainer)),
-                                    const SizedBox(height: 4),
-                                    Text('${state.customerCollections.length} Customer Accounts Pending', style: TextStyle(fontSize: 12, color: cs.onPrimaryContainer.withAlpha(200))),
-                                  ],
-                                ),
-                              ),
+                            child: HomeKpiCard(
+                              title: "Today's Money Collection",
+                              value: '₹${state.todayMoneyCollection.toStringAsFixed(0)}',
+                              subtitle: '${state.todayOrdersCount} today • ₹${state.totalMoneyCollection.toStringAsFixed(0)} all orders',
+                              icon: Icons.account_balance_wallet_outlined,
+                              backgroundColor: cs.primaryContainer,
+                              foregroundColor: cs.onPrimaryContainer,
                             ),
                           ),
                           const SizedBox(width: 16),
 
-                          // Card 2 (Middle): Total Items Count Sum
+                          // Card 2: Total Order Count
                           Expanded(
-                            child: Card(
-                              color: cs.secondaryContainer,
-                              elevation: 0,
-                              child: Padding(
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Text('Total Items Overall Orders', style: TextStyle(fontWeight: FontWeight.bold, color: cs.onSecondaryContainer)),
-                                    const SizedBox(height: 4),
-                                    Text('Sum = ${state.totalItemsSum}', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: cs.onSecondaryContainer)),
-                                    const SizedBox(height: 4),
-                                    Text('Total items ordered today', style: TextStyle(fontSize: 11, color: cs.onSecondaryContainer.withAlpha(200))),
-                                  ],
-                                ),
-                              ),
+                            child: HomeKpiCard(
+                              title: 'Total Order Count',
+                              value: '${state.totalOrdersCount}',
+                              subtitle: '${state.todayOrdersCount} placed / delivering today',
+                              icon: Icons.receipt_long_outlined,
+                              backgroundColor: cs.tertiaryContainer,
+                              foregroundColor: cs.onTertiaryContainer,
+                              onTap: () => AppNav.go(AppRoutes.orders),
                             ),
                           ),
                           const SizedBox(width: 16),
 
-                          // Card 3: Today's Orders Count
+                          // Card 3: Menu Items to Build
                           Expanded(
-                            child: Card(
-                              color: cs.tertiaryContainer,
-                              elevation: 0,
-                              child: Padding(
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Today\'s Total Orders', style: TextStyle(fontWeight: FontWeight.bold, color: cs.onTertiaryContainer)),
-                                    const SizedBox(height: 8),
-                                    Text('${state.totalOrdersCount}', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: cs.onTertiaryContainer)),
-                                    const SizedBox(height: 4),
-                                    Text('Active orders across Mithai Shop', style: TextStyle(fontSize: 12, color: cs.onTertiaryContainer.withAlpha(200))),
-                                  ],
-                                ),
-                              ),
+                            child: HomeKpiCard(
+                              title: 'Menu Items to Build',
+                              value: '${state.menuItemsToBuild.length}',
+                              subtitle: 'Aggregated from all orders',
+                              icon: Icons.soup_kitchen_outlined,
+                              backgroundColor: cs.secondaryContainer,
+                              foregroundColor: cs.onSecondaryContainer,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 28),
 
-                      // Two Pane Grid: Left Collections table, Right Customer Orders
-                      Row(
+                      // Two-Pane Main Layout:
+                      // Left: Today's Order Highlight (customer + total + 1 line item list)
+                      // Right: Total Menu Items to Build from All Orders (eg: Ladoo = 12 kg (total 5 orders))
+                      const Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Customer Collections Breakdown
+                          // Left Pane: Today's Order Highlight
                           Expanded(
-                            flex: 1,
-                            child: Card(
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: cs.outlineVariant)),
-                              child: Padding(
-                                padding: const EdgeInsets.all(24),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Customer Money Collection', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                                    const SizedBox(height: 16),
-                                    if (state.customerCollections.isEmpty)
-                                      const Padding(
-                                        padding: EdgeInsets.symmetric(vertical: 16),
-                                        child: Text('No pending customer collections', style: TextStyle(color: Colors.grey)),
-                                      )
-                                    else
-                                      ...state.customerCollections.map(
-                                        (c) => Padding(
-                                          padding: const EdgeInsets.only(bottom: 12),
-                                          child: Row(
-                                            children: [
-                                              CircleAvatar(child: Text(c.customerName.isNotEmpty ? c.customerName[0] : '?')),
-                                              const SizedBox(width: 12),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(c.customerName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                                    Text('${c.orderCount} orders • ${c.phone}', style: theme.textTheme.bodySmall),
-                                                  ],
-                                                ),
-                                              ),
-                                              Column(
-                                                crossAxisAlignment: CrossAxisAlignment.end,
-                                                children: [
-                                                  Text('₹${c.amountDue.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary)),
-                                                  Text(c.status, style: TextStyle(fontSize: 10, color: cs.outline)),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
+                            flex: 6,
+                            child: OrderHighlightSection(),
                           ),
-                          const SizedBox(width: 24),
+                          SizedBox(width: 24),
 
-                          // Customer Orders History
+                          // Right Pane: Total Menu Items to Build
                           Expanded(
-                            flex: 1,
-                            child: Card(
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: cs.outlineVariant)),
-                              child: Padding(
-                                padding: const EdgeInsets.all(24),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Recent Orders & Customer Info', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                                    const SizedBox(height: 16),
-                                    if (state.recentOrders.isEmpty)
-                                      const Padding(
-                                        padding: EdgeInsets.symmetric(vertical: 16),
-                                        child: Text('No recent orders today', style: TextStyle(color: Colors.grey)),
-                                      )
-                                    else
-                                      ...state.recentOrders.map(
-                                        (ord) => Padding(
-                                          padding: const EdgeInsets.only(bottom: 12),
-                                          child: Row(
-                                            children: [
-                                              CircleAvatar(
-                                                backgroundColor: cs.primaryContainer,
-                                                child: Icon(Icons.receipt_long, color: cs.onPrimaryContainer, size: 20),
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(ord.customerName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                                    Text('${ord.orderId} • ${ord.itemsSummary}', style: theme.textTheme.bodySmall),
-                                                  ],
-                                                ),
-                                              ),
-                                              Column(
-                                                crossAxisAlignment: CrossAxisAlignment.end,
-                                                children: [
-                                                  Text('₹${ord.totalAmount.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary)),
-                                                  Text(ord.status, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
+                            flex: 5,
+                            child: MenuItemsToBuildCard(),
                           ),
                         ],
                       ),

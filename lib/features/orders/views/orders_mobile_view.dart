@@ -19,10 +19,12 @@ class OrdersMobileView extends ConsumerWidget {
 
   static const _statusOptions = [
     'All',
-    'Pending',
+    'Placed',
     'Preparing',
     'Ready',
+    'Delivering',
     'Delivered',
+    'Completed',
     'Cancelled',
   ];
 
@@ -117,41 +119,48 @@ class OrdersMobileView extends ConsumerWidget {
 
           // List of Order Cards
           Expanded(
-            child: filteredOrders.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.receipt_long_outlined, size: 48, color: cs.outline),
-                        const SizedBox(height: 12),
-                        Text('No orders found', style: theme.textTheme.titleMedium),
-                        const SizedBox(height: 12),
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            vm.setSearchQuery('');
-                            vm.setStatusFilter('All');
-                            vm.clearDateFilter();
-                          },
-                          icon: const Icon(Icons.filter_alt_off, size: 16),
-                          label: const Text('Reset Filters'),
+            child: RefreshIndicator(
+              onRefresh: () => vm.loadOrders(),
+              child: filteredOrders.isEmpty
+                  ? Center(
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.receipt_long_outlined, size: 48, color: cs.outline),
+                            const SizedBox(height: 12),
+                            Text('No orders found', style: theme.textTheme.titleMedium),
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                vm.setSearchQuery('');
+                                vm.setStatusFilter('All');
+                                vm.clearDateFilter();
+                              },
+                              icon: const Icon(Icons.filter_alt_off, size: 16),
+                              label: const Text('Reset Filters'),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
+                    )
+                  : ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(12),
+                      itemCount: filteredOrders.length,
+                      itemBuilder: (context, index) {
+                        final order = filteredOrders[index];
+                        final isExpanded = state.expandedOrderIds.contains(order.id);
+                        return OrderCard(
+                          order: order,
+                          isExpanded: isExpanded,
+                          onToggleExpand: () => vm.toggleExpanded(order.id),
+                          onStatusChanged: (newStatus) => vm.updateOrderStatus(order.id, newStatus),
+                        );
+                      },
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: filteredOrders.length,
-                    itemBuilder: (context, index) {
-                      final order = filteredOrders[index];
-                      final isExpanded = state.expandedOrderIds.contains(order.id);
-                      return OrderCard(
-                        order: order,
-                        isExpanded: isExpanded,
-                        onToggleExpand: () => vm.toggleExpanded(order.id),
-                        onStatusChanged: (newStatus) => vm.updateOrderStatus(order.id, newStatus),
-                      );
-                    },
-                  ),
+            ),
           ),
         ],
       ),

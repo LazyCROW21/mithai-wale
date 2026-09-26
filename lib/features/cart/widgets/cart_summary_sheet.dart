@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/routing/router_key.dart';
 import '../cart_providers.dart';
 import '../models/cart_item_model.dart';
+import 'checkout_dialog.dart';
 import 'edit_quantity_dialog.dart';
 
 class CartSummarySheet extends ConsumerWidget {
@@ -249,16 +250,7 @@ class CartSummarySheet extends ConsumerWidget {
                       width: double.infinity,
                       height: 48,
                       child: FilledButton.icon(
-                        onPressed: () {
-                          AppNav.pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Order placed for ₹${CartItem.formatNumber(cart.totalPrice)}!',
-                              ),
-                            ),
-                          );
-                        },
+                        onPressed: () => showCheckoutDialog(context),
                         icon: const Icon(Icons.check_circle_outline),
                         label: const Text('Proceed to Checkout', style: TextStyle(fontSize: 16)),
                       ),

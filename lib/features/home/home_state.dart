@@ -1,102 +1,110 @@
 import 'package:flutter/foundation.dart';
 
-@immutable
-class CustomerCollectionEntry {
-  const CustomerCollectionEntry({
-    required this.customerName,
-    required this.phone,
-    required this.amountDue,
-    required this.orderCount,
-    required this.status,
-  });
+import '../../core/database/models/order_model.dart';
 
-  final String customerName;
-  final String phone;
-  final double amountDue;
-  final int orderCount;
-  final String status; // 'Pending', 'Partial', 'Paid'
-}
-
+/// Aggregated quantity and order count for a specific menu item across orders.
 @immutable
-class ItemQuantitySummary {
-  const ItemQuantitySummary({
+class MenuItemBuildSummary {
+  const MenuItemBuildSummary({
     required this.name,
-    required this.quantity,
+    required this.totalQuantity,
     required this.unit,
-    required this.emoji,
+    required this.orderCount,
   });
 
   final String name;
-  final int quantity;
+  final double totalQuantity;
   final String unit;
-  final String emoji;
-}
+  final int orderCount;
 
-@immutable
-class OrderSummary {
-  const OrderSummary({
-    required this.orderId,
-    required this.customerName,
-    required this.customerPhone,
-    required this.time,
-    required this.itemsSummary,
-    required this.totalAmount,
-    required this.status,
-  });
+  /// Formatted quantity: integer if whole number (e.g. 12), else 1 decimal (e.g. 12.5).
+  String get formattedQuantity {
+    if (totalQuantity == totalQuantity.roundToDouble()) {
+      return totalQuantity.toInt().toString();
+    }
+    return totalQuantity.toStringAsFixed(1);
+  }
 
-  final String orderId;
-  final String customerName;
-  final String customerPhone;
-  final String time;
-  final String itemsSummary;
-  final double totalAmount;
-  final String status; // 'Preparing', 'Ready', 'Delivered'
+  /// String formatted as: "Ladoo = 12 kg (total 5 orders)"
+  String get displayLine {
+    final orderSuffix = orderCount == 1 ? 'order' : 'orders';
+    return '$name = $formattedQuantity $unit (total $orderCount $orderSuffix)';
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MenuItemBuildSummary &&
+          name == other.name &&
+          totalQuantity == other.totalQuantity &&
+          unit == other.unit &&
+          orderCount == other.orderCount;
+
+  @override
+  int get hashCode => Object.hash(name, totalQuantity, unit, orderCount);
 }
 
 @immutable
 class HomeState {
   const HomeState({
-    this.selectedNavIndex = 0,
-    this.selectedCategory = 'All',
-    this.totalMoneyToCollect = 0.0,
-    this.customerCollections = const [],
-    this.totalItemsSum = 0,
-    this.itemSummaries = const [],
+    this.todayMoneyCollection = 0.0,
+    this.totalMoneyCollection = 0.0,
+    this.todayOrdersCount = 0,
     this.totalOrdersCount = 0,
-    this.recentOrders = const [],
+    this.todayOrders = const [],
+    this.allOrders = const [],
+    this.menuItemsToBuild = const [],
     this.isLoading = false,
   });
 
-  final int selectedNavIndex;
-  final String selectedCategory;
-  final double totalMoneyToCollect;
-  final List<CustomerCollectionEntry> customerCollections;
-  final int totalItemsSum;
-  final List<ItemQuantitySummary> itemSummaries;
+  /// Total money to collect from today's orders (excluding cancelled)
+  final double todayMoneyCollection;
+
+  /// Total money from all orders (excluding cancelled)
+  final double totalMoneyCollection;
+
+  /// Count of orders placed or scheduled for today
+  final int todayOrdersCount;
+
+  /// Total orders count across the database
   final int totalOrdersCount;
-  final List<OrderSummary> recentOrders;
+
+  /// Orders placed or delivering today
+  final List<OrderModel> todayOrders;
+
+  /// All orders stored in Hive DB
+  final List<OrderModel> allOrders;
+
+  /// Aggregated items to build for kitchen production across all orders
+  final List<MenuItemBuildSummary> menuItemsToBuild;
+
+  /// Loading state indicator
   final bool isLoading;
 
+  /// Backward-compatible alias for today's collection
+  double get totalMoneyToCollect => todayMoneyCollection;
+
+  /// Backward-compatible sum of distinct item types to build
+  int get totalItemsSum => menuItemsToBuild.length;
+
   HomeState copyWith({
-    int? selectedNavIndex,
-    String? selectedCategory,
-    double? totalMoneyToCollect,
-    List<CustomerCollectionEntry>? customerCollections,
-    int? totalItemsSum,
-    List<ItemQuantitySummary>? itemSummaries,
+    double? todayMoneyCollection,
+    double? totalMoneyCollection,
+    int? todayOrdersCount,
     int? totalOrdersCount,
-    List<OrderSummary>? recentOrders,
+    List<OrderModel>? todayOrders,
+    List<OrderModel>? allOrders,
+    List<MenuItemBuildSummary>? menuItemsToBuild,
     bool? isLoading,
   }) {
     return HomeState(
-      selectedNavIndex: selectedNavIndex ?? this.selectedNavIndex,
-      selectedCategory: selectedCategory ?? this.selectedCategory,
-      totalMoneyToCollect: totalMoneyToCollect ?? this.totalMoneyToCollect,
-      customerCollections: customerCollections ?? this.customerCollections,
-      totalItemsSum: totalItemsSum ?? this.totalItemsSum,
-      itemSummaries: itemSummaries ?? this.itemSummaries,
+      todayMoneyCollection: todayMoneyCollection ?? this.todayMoneyCollection,
+      totalMoneyCollection: totalMoneyCollection ?? this.totalMoneyCollection,
+      todayOrdersCount: todayOrdersCount ?? this.todayOrdersCount,
       totalOrdersCount: totalOrdersCount ?? this.totalOrdersCount,
-      recentOrders: recentOrders ?? this.recentOrders,
+      todayOrders: todayOrders ?? this.todayOrders,
+      allOrders: allOrders ?? this.allOrders,
+      menuItemsToBuild: menuItemsToBuild ?? this.menuItemsToBuild,
       isLoading: isLoading ?? this.isLoading,
     );
   }
@@ -105,26 +113,24 @@ class HomeState {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is HomeState &&
-          selectedNavIndex == other.selectedNavIndex &&
-          selectedCategory == other.selectedCategory &&
-          totalMoneyToCollect == other.totalMoneyToCollect &&
-          listEquals(customerCollections, other.customerCollections) &&
-          totalItemsSum == other.totalItemsSum &&
-          listEquals(itemSummaries, other.itemSummaries) &&
+          todayMoneyCollection == other.todayMoneyCollection &&
+          totalMoneyCollection == other.totalMoneyCollection &&
+          todayOrdersCount == other.todayOrdersCount &&
           totalOrdersCount == other.totalOrdersCount &&
-          listEquals(recentOrders, other.recentOrders) &&
+          listEquals(todayOrders, other.todayOrders) &&
+          listEquals(allOrders, other.allOrders) &&
+          listEquals(menuItemsToBuild, other.menuItemsToBuild) &&
           isLoading == other.isLoading;
 
   @override
   int get hashCode => Object.hash(
-        selectedNavIndex,
-        selectedCategory,
-        totalMoneyToCollect,
-        customerCollections,
-        totalItemsSum,
-        itemSummaries,
+        todayMoneyCollection,
+        totalMoneyCollection,
+        todayOrdersCount,
         totalOrdersCount,
-        recentOrders,
+        todayOrders,
+        allOrders,
+        menuItemsToBuild,
         isLoading,
       );
 }

@@ -20,10 +20,12 @@ class OrdersDesktopView extends ConsumerWidget {
 
   static const _statusOptions = [
     'All',
-    'Pending',
+    'Placed',
     'Preparing',
     'Ready',
+    'Delivering',
     'Delivered',
+    'Completed',
     'Cancelled',
   ];
 
@@ -139,6 +141,12 @@ class OrdersDesktopView extends ConsumerWidget {
                           icon: const Icon(Icons.calendar_month_outlined, size: 18),
                           label: const Text('Filter by Date'),
                         ),
+                      const SizedBox(width: 8),
+                      IconButton.outlined(
+                        onPressed: () => vm.loadOrders(),
+                        icon: const Icon(Icons.refresh, size: 18),
+                        tooltip: 'Refresh Orders',
+                      ),
                     ],
                   ),
                 ),

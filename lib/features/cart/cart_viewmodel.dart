@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/database/models/menu_item_model.dart';
+import '../../core/database/models/order_model.dart';
 import '../../core/database/repositories/cart_repository.dart';
+import '../../core/database/repositories/orders_repository.dart';
 import '../../core/di/service_locator.dart';
 import 'cart_state.dart';
 import 'models/cart_item_model.dart';
@@ -95,4 +97,41 @@ class CartViewModel extends Notifier<CartState> {
     state = const CartState();
     _cartRepo?.clear();
   }
+
+  /// Creates and saves an order from current cart items to Hive with status "Placed",
+  /// then clears the cart.
+  Future<OrderModel?> checkout({
+    String customerName = 'Walk-in Customer',
+    String customerPhone = '+91 98765 43210',
+    DateTime? deliveryDate,
+  }) async {
+    if (state.isEmpty) return null;
+
+    final id = '#ORD-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+    final orderItems = state.items.values.map((ci) => OrderItemDetail(
+      name: ci.item.title,
+      quantity: ci.quantity,
+      unit: ci.item.unit,
+      unitPrice: ci.item.price,
+    )).toList();
+
+    final order = OrderModel(
+      id: id,
+      customerName: customerName.trim().isEmpty ? 'Walk-in Customer' : customerName.trim(),
+      customerPhone: customerPhone.trim().isEmpty ? '+91 98765 43210' : customerPhone.trim(),
+      items: orderItems,
+      deliveryDate: deliveryDate ?? DateTime.now(),
+      orderDate: DateTime.now(),
+      totalBill: state.totalPrice,
+      status: 'Placed',
+    );
+
+    if (sl.isRegistered<IOrdersRepository>()) {
+      await sl<IOrdersRepository>().save(order);
+    }
+
+    clearCart();
+    return order;
+  }
 }
+

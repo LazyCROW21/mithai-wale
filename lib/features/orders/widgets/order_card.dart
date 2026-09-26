@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
-import '../orders_state.dart';
+
+import '../../../core/database/models/order_model.dart';
+import 'edit_order_modal.dart';
+import 'order_invoice_share.dart';
 
 /// A table-like long row card for displaying an order with basic info
-/// and an expandable breakdown view of quantities and pricing.
+/// and an expandable breakdown view directly showing order items and pricing.
 class OrderCard extends StatelessWidget {
   const OrderCard({
     super.key,
     required this.order,
     required this.isExpanded,
     required this.onToggleExpand,
-    required this.onStatusChanged,
+    this.onStatusChanged,
   });
 
   final OrderModel order;
   final bool isExpanded;
   final VoidCallback onToggleExpand;
-  final ValueChanged<String> onStatusChanged;
+  final ValueChanged<String>? onStatusChanged;
 
   String _formatDate(DateTime date) {
     final months = [
@@ -27,7 +30,6 @@ class OrderCard extends StatelessWidget {
 
   String _formatCurrency(double amount) {
     final formatted = amount.toStringAsFixed(2);
-    // Simple thousands comma formatting e.g. 3400.00 -> 3,400.00
     final parts = formatted.split('.');
     final integerPart = parts[0].replaceAll(RegExp(r'\B(?=(\d{3})+(?!\d))'), ',');
     return '₹ $integerPart.${parts[1]}';
@@ -36,19 +38,72 @@ class OrderCard extends StatelessWidget {
   Color _getStatusColor(BuildContext context, String status) {
     final cs = Theme.of(context).colorScheme;
     switch (status.toLowerCase()) {
-      case 'pending':
-        return Colors.orange;
-      case 'preparing':
+      case 'placed':
         return Colors.blue;
+      case 'preparing':
+        return Colors.orange;
       case 'ready':
         return Colors.purple;
+      case 'delivering':
+        return Colors.cyan;
       case 'delivered':
         return Colors.green;
+      case 'completed':
+        return Colors.teal;
       case 'cancelled':
         return cs.error;
+      case 'pending':
+        return Colors.amber;
       default:
         return cs.secondary;
     }
+  }
+
+  Widget _buildPopupMenu(BuildContext context) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert, size: 20),
+      tooltip: 'Order Options',
+      onSelected: (action) {
+        if (action == 'edit') {
+          showEditOrderModal(context, order);
+        } else if (action == 'share') {
+          shareOrderInvoice(context, order);
+        }
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'edit',
+          child: Row(
+            children: [
+              Icon(Icons.edit_outlined, size: 18),
+              SizedBox(width: 10),
+              Text('Edit Order'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'share',
+          child: Row(
+            children: [
+              Icon(Icons.share_outlined, size: 18),
+              SizedBox(width: 10),
+              Text('Share Invoice'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'print',
+          enabled: false,
+          child: Row(
+            children: [
+              Icon(Icons.print_outlined, size: 18, color: Colors.grey),
+              SizedBox(width: 10),
+              Text('Print (Disabled)', style: TextStyle(color: Colors.grey)),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -75,7 +130,7 @@ class OrderCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Main Long Row Header (Basic Info) ─────────────────────────
+              // ── Main Header Row (Basic Info) ──────────────────────────────
               LayoutBuilder(
                 builder: (context, constraints) {
                   final isNarrow = constraints.maxWidth < 650;
@@ -86,7 +141,7 @@ class OrderCard extends StatelessWidget {
                 },
               ),
 
-              // ── Expandable In-Depth Item Breakdown ────────────────────────
+              // ── Expandable Item Breakdown (Directly shows items) ──────────
               AnimatedCrossFade(
                 firstChild: const SizedBox(width: double.infinity),
                 secondChild: Column(
@@ -96,67 +151,7 @@ class OrderCard extends StatelessWidget {
                       padding: EdgeInsets.symmetric(vertical: 12.0),
                       child: Divider(height: 1),
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Order Breakdown (${order.id})',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: cs.primary,
-                          ),
-                        ),
-                        PopupMenuButton<String>(
-                          initialValue: order.status,
-                          onSelected: onStatusChanged,
-                          tooltip: 'Change Status',
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: cs.surfaceContainerHigh,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: cs.outlineVariant),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Status: ${order.status}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: cs.onSurface,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                const Icon(Icons.arrow_drop_down, size: 16),
-                              ],
-                            ),
-                          ),
-                          itemBuilder: (context) => [
-                            'Pending',
-                            'Preparing',
-                            'Ready',
-                            'Delivered',
-                            'Cancelled',
-                          ].map((status) => PopupMenuItem(
-                            value: status,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.circle,
-                                  size: 10,
-                                  color: _getStatusColor(context, status),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(status),
-                              ],
-                            ),
-                          )).toList(),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
+
                     // Table Header
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -164,16 +159,16 @@ class OrderCard extends StatelessWidget {
                         color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Row(
+                      child: const Row(
                         children: [
-                          const Expanded(
+                          Expanded(
                             flex: 3,
                             child: Text(
                               'Item Name',
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                             ),
                           ),
-                          const Expanded(
+                          Expanded(
                             flex: 2,
                             child: Text(
                               'Quantity',
@@ -181,7 +176,7 @@ class OrderCard extends StatelessWidget {
                               textAlign: TextAlign.center,
                             ),
                           ),
-                          const Expanded(
+                          Expanded(
                             flex: 2,
                             child: Text(
                               'Unit Price',
@@ -189,7 +184,7 @@ class OrderCard extends StatelessWidget {
                               textAlign: TextAlign.right,
                             ),
                           ),
-                          const Expanded(
+                          Expanded(
                             flex: 2,
                             child: Text(
                               'Total Price',
@@ -201,61 +196,109 @@ class OrderCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
+
                     // Item Rows
                     ...order.items.map((item) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  item.name,
+                                  style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  '${item.quantity % 1 == 0 ? item.quantity.toInt() : item.quantity} ${item.unit}',
+                                  style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  '₹${item.unitPrice.toStringAsFixed(2)}',
+                                  style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  '₹${item.totalPrice.toStringAsFixed(2)}',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )),
+
+                    const Divider(height: 16),
+
+                    // Discount Breakdown (if applied)
+                    if (order.discountType != null && order.calculatedDiscount > 0) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Subtotal',
+                              style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
+                            ),
+                            Text(
+                              _formatCurrency(order.subtotal),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              order.discountType == DiscountType.percentage
+                                  ? 'Discount (${order.discountAmount % 1 == 0 ? order.discountAmount.toInt() : order.discountAmount}%)'
+                                  : 'Discount (Flat)',
+                              style: const TextStyle(fontSize: 13, color: Colors.green, fontWeight: FontWeight.w600),
+                            ),
+                            Text(
+                              '-${_formatCurrency(order.calculatedDiscount)}',
+                              style: const TextStyle(fontSize: 13, color: Colors.green, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+
+                    // Grand Total & Customer Phone
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(
-                            flex: 3,
-                            child: Text(
-                              item.name,
-                              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
-                            ),
+                          Text(
+                            order.customerPhone.isNotEmpty
+                                ? 'Customer Phone: ${order.customerPhone}'
+                                : 'No Phone Provided',
+                            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                           ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              '${item.quantity % 1 == 0 ? item.quantity.toInt() : item.quantity} ${item.unit}',
-                              style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              '₹${item.unitPrice.toStringAsFixed(2)}',
-                              style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
-                              textAlign: TextAlign.right,
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              '₹${item.totalPrice.toStringAsFixed(2)}',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              textAlign: TextAlign.right,
+                          Text(
+                            'Grand Total: ${_formatCurrency(order.finalBill)}',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: cs.primary,
                             ),
                           ),
                         ],
                       ),
-                    )),
-                    const Divider(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Customer Phone: ${order.customerPhone}',
-                          style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
-                        ),
-                        Text(
-                          'Grand Total: ${_formatCurrency(order.totalBill)}',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: cs.primary,
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
@@ -270,18 +313,57 @@ class OrderCard extends StatelessWidget {
   }
 
   /// Wide desktop/tablet horizontal table-like row card layout.
+  /// Items summary is placed in the leftmost column.
   Widget _buildDesktopRow(BuildContext context, ThemeData theme, ColorScheme cs, Color statusColor) {
     return Row(
       children: [
-        // Customer Name + Order ID
+        // ── 1. Items Summary (Leftmost column) ──────────────────────────────
+        Expanded(
+          flex: 4,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    order.id,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: cs.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '(${order.items.length} ${order.items.length == 1 ? 'item' : 'items'})',
+                    style: TextStyle(fontSize: 11, color: cs.outline),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                order.itemsSummary,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 16),
+
+        // ── 2. Customer Name & Phone ────────────────────────────────────────
         SizedBox(
-          width: 170,
+          width: 160,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 order.customerName,
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
                 maxLines: 1,
@@ -289,30 +371,10 @@ class OrderCard extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                order.id,
-                style: theme.textTheme.bodySmall?.copyWith(
+                order.customerPhone.isNotEmpty ? order.customerPhone : 'No phone',
+                style: TextStyle(
+                  fontSize: 11,
                   color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        // Summary of Items (comma-separated without quantity in one line)
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Items Summary',
-                style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                order.itemsSummary,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: cs.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
                 maxLines: 1,
@@ -322,7 +384,8 @@ class OrderCard extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        // Delivery Date
+
+        // ── 3. Delivery Date ────────────────────────────────────────────────
         SizedBox(
           width: 110,
           child: Column(
@@ -343,19 +406,22 @@ class OrderCard extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        // Total Bill
+
+        // ── 4. Total Bill ───────────────────────────────────────────────────
         SizedBox(
-          width: 110,
+          width: 115,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                'Total Bill',
+                order.discountType != null && order.calculatedDiscount > 0
+                    ? 'Total (Disc.)'
+                    : 'Total Bill',
                 style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 2),
               Text(
-                _formatCurrency(order.totalBill),
+                _formatCurrency(order.finalBill),
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: cs.primary,
@@ -365,7 +431,8 @@ class OrderCard extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 16),
-        // Status Badge
+
+        // ── 5. Status Badge ─────────────────────────────────────────────────
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
@@ -382,8 +449,12 @@ class OrderCard extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 12),
-        // Expand/Collapse Icon
+        const SizedBox(width: 8),
+
+        // ── 6. Popup Menu on the right (Edit, Share, Print) ─────────────────
+        _buildPopupMenu(context),
+
+        // ── 7. Expand/Collapse Icon ─────────────────────────────────────────
         AnimatedRotation(
           turns: isExpanded ? 0.5 : 0.0,
           duration: const Duration(milliseconds: 200),
@@ -397,32 +468,52 @@ class OrderCard extends StatelessWidget {
   }
 
   /// Compact mobile row layout.
+  /// Items summary is placed in the leftmost column.
   Widget _buildMobileRow(BuildContext context, ThemeData theme, ColorScheme cs, Color statusColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Top line: Leftmost Items summary & ID, Right status & popup & expand
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Leftmost Items Overview
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Row(
+                    children: [
+                      Text(
+                        order.id,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: cs.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '(${order.items.length} ${order.items.length == 1 ? 'item' : 'items'})',
+                        style: TextStyle(fontSize: 11, color: cs.outline),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
                   Text(
-                    order.customerName,
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    order.itemsSummary,
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  Text(
-                    order.id,
-                    style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                  ),
                 ],
               ),
             ),
+            const SizedBox(width: 8),
+
+            // Status Badge
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
@@ -439,7 +530,11 @@ class OrderCard extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+
+            // Popup Menu on the right (Edit, Share, Print)
+            _buildPopupMenu(context),
+
+            // Expand icon
             AnimatedRotation(
               turns: isExpanded ? 0.5 : 0.0,
               duration: const Duration(milliseconds: 200),
@@ -451,16 +546,28 @@ class OrderCard extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        // Summary of Items (one line, comma separated without qty)
-        Text(
-          order.itemsSummary,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: cs.onSurfaceVariant,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+
+        // Customer Info line
+        Row(
+          children: [
+            Icon(Icons.person_outline, size: 14, color: cs.onSurfaceVariant),
+            const SizedBox(width: 4),
+            Text(
+              order.customerName,
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurface),
+            ),
+            if (order.customerPhone.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Text(
+                '•  ${order.customerPhone}',
+                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: 8),
+
+        // Delivery Date & Total Bill
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -475,7 +582,7 @@ class OrderCard extends StatelessWidget {
               ],
             ),
             Text(
-              _formatCurrency(order.totalBill),
+              _formatCurrency(order.finalBill),
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: cs.primary,

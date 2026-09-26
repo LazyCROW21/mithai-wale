@@ -60,7 +60,7 @@ class CartItem {
     return '$qtyStr $u';
   }
 
-  /// Formatted subtitle following pattern: "Qty: <qty> | Rs. <price>/kg (<total unit / weight>)"
+  /// Formatted subtitle following pattern: `Qty: <qty> | Rs. <price>/kg (<total unit / weight>)`
   String get summarySubtitle {
     final qtyStr = formatNumber(quantity);
     return 'Qty: $qtyStr | $pricePerUnitLabel ($formattedUnits)';
