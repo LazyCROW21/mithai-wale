@@ -24,6 +24,7 @@ import '../database/repositories/cart_repository.dart';
 import '../database/repositories/category_repository.dart';
 import '../database/repositories/menu_repository.dart';
 import '../database/repositories/orders_repository.dart';
+import '../database/repositories/payments_repository.dart';
 import '../database/repositories/settings_repository.dart';
 
 /// Global service locator instance.
@@ -47,6 +48,9 @@ Future<void> setupServiceLocator() async {
   );
   sl.registerLazySingleton<IOrdersRepository>(
     () => DatabaseProvider.instance.orders,
+  );
+  sl.registerLazySingleton<IPaymentsRepository>(
+    () => DatabaseProvider.instance.payments,
   );
 
   // ── Services ──────────────────────────────────────────────────────────────

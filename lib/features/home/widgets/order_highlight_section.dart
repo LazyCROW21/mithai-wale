@@ -79,7 +79,7 @@ class OrderHighlightSection extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${state.todayOrdersCount} today',
+                    '${displayedOrders.length} pending',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
@@ -111,7 +111,7 @@ class OrderHighlightSection extends ConsumerWidget {
                     ),
                     const SizedBox(height: 10),
                     const Text(
-                      "No orders placed for today yet",
+                      'No pending orders for today',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -119,7 +119,7 @@ class OrderHighlightSection extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Orders created or scheduled for delivery today will appear here.",
+                      'All orders for today are settled or no orders placed yet.',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: cs.outline,
                       ),

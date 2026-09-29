@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../models/menu_item_model.dart';
 
 abstract interface class IMenuRepository {
@@ -11,6 +13,7 @@ abstract interface class IMenuRepository {
     required double price,
     required String unit,
     bool isAvailable = true,
+    Uint8List? imageBytes,
   });
   Future<bool> update(MenuItem item);
   Future<int> delete(int id);

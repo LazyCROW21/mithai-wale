@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/models/order_model.dart';
+import '../../ledger/ledger_providers.dart';
 import 'edit_order_modal.dart';
 import 'order_invoice_share.dart';
 
-/// A table-like long row card for displaying an order with basic info
-/// and an expandable breakdown view directly showing order items and pricing.
-class OrderCard extends StatelessWidget {
+/// A table-like long row card for displaying an order with basic info,
+/// payment collection status, and an expandable breakdown view.
+class OrderCard extends ConsumerWidget {
   const OrderCard({
     super.key,
     required this.order,
@@ -22,8 +24,18 @@ class OrderCard extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]} ${date.year}';
   }
@@ -31,7 +43,10 @@ class OrderCard extends StatelessWidget {
   String _formatCurrency(double amount) {
     final formatted = amount.toStringAsFixed(2);
     final parts = formatted.split('.');
-    final integerPart = parts[0].replaceAll(RegExp(r'\B(?=(\d{3})+(?!\d))'), ',');
+    final integerPart = parts[0].replaceAll(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      ',',
+    );
     return '₹ $integerPart.${parts[1]}';
   }
 
@@ -52,6 +67,8 @@ class OrderCard extends StatelessWidget {
         return Colors.teal;
       case 'cancelled':
         return cs.error;
+      case 'returned':
+        return Colors.deepOrange;
       case 'pending':
         return Colors.amber;
       default:
@@ -107,10 +124,38 @@ class OrderCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final statusColor = _getStatusColor(context, order.status);
+
+    final orderPayments = ref.watch(orderPaymentsProvider(order.id));
+    final creditTotal = orderPayments
+        .where((p) => p.isCredit)
+        .fold(0.0, (sum, p) => sum + p.amount);
+    final debitTotal = orderPayments
+        .where((p) => p.isDebit)
+        .fold(0.0, (sum, p) => sum + p.amount);
+    final netPaid = creditTotal - debitTotal;
+    final balance = order.finalBill - netPaid;
+
+    final String paymentStatusLabel;
+    final Color paymentStatusColor;
+    final double paymentStatusAmount;
+
+    if (balance > 0.009) {
+      paymentStatusLabel = 'To Collect';
+      paymentStatusColor = Colors.orange.shade800;
+      paymentStatusAmount = balance;
+    } else if (balance < -0.009) {
+      paymentStatusLabel = 'To Refund';
+      paymentStatusColor = Colors.red.shade700;
+      paymentStatusAmount = balance.abs();
+    } else {
+      paymentStatusLabel = 'Settled';
+      paymentStatusColor = Colors.green.shade700;
+      paymentStatusAmount = 0.0;
+    }
 
     return Card(
       elevation: isExpanded ? 3 : 1,
@@ -118,7 +163,9 @@ class OrderCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: isExpanded ? cs.primary.withValues(alpha: 0.4) : cs.outlineVariant.withValues(alpha: 0.5),
+          color: isExpanded
+              ? cs.primary.withValues(alpha: 0.4)
+              : cs.outlineVariant.withValues(alpha: 0.5),
           width: isExpanded ? 1.5 : 1.0,
         ),
       ),
@@ -135,9 +182,25 @@ class OrderCard extends StatelessWidget {
                 builder: (context, constraints) {
                   final isNarrow = constraints.maxWidth < 650;
                   if (isNarrow) {
-                    return _buildMobileRow(context, theme, cs, statusColor);
+                    return _buildMobileRow(
+                      context,
+                      theme,
+                      cs,
+                      statusColor,
+                      paymentStatusLabel,
+                      paymentStatusColor,
+                      paymentStatusAmount,
+                    );
                   }
-                  return _buildDesktopRow(context, theme, cs, statusColor);
+                  return _buildDesktopRow(
+                    context,
+                    theme,
+                    cs,
+                    statusColor,
+                    paymentStatusLabel,
+                    paymentStatusColor,
+                    paymentStatusAmount,
+                  );
                 },
               ),
 
@@ -154,9 +217,14 @@ class OrderCard extends StatelessWidget {
 
                     // Table Header
                     Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 12,
+                      ),
                       decoration: BoxDecoration(
-                        color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                        color: cs.surfaceContainerHighest.withValues(
+                          alpha: 0.5,
+                        ),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Row(
@@ -165,14 +233,20 @@ class OrderCard extends StatelessWidget {
                             flex: 3,
                             child: Text(
                               'Item Name',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
                           Expanded(
                             flex: 2,
                             child: Text(
                               'Quantity',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
                               textAlign: TextAlign.center,
                             ),
                           ),
@@ -180,7 +254,10 @@ class OrderCard extends StatelessWidget {
                             flex: 2,
                             child: Text(
                               'Unit Price',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
                               textAlign: TextAlign.right,
                             ),
                           ),
@@ -188,7 +265,10 @@ class OrderCard extends StatelessWidget {
                             flex: 2,
                             child: Text(
                               'Total Price',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
                               textAlign: TextAlign.right,
                             ),
                           ),
@@ -198,67 +278,97 @@ class OrderCard extends StatelessWidget {
                     const SizedBox(height: 4),
 
                     // Item Rows
-                    ...order.items.map((item) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                flex: 3,
-                                child: Text(
-                                  item.name,
-                                  style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                    ...order.items.map(
+                      (item) => Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 12,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                item.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 13,
                                 ),
                               ),
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  '${item.quantity % 1 == 0 ? item.quantity.toInt() : item.quantity} ${item.unit}',
-                                  style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
-                                  textAlign: TextAlign.center,
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                '${item.quantity % 1 == 0 ? item.quantity.toInt() : item.quantity} ${item.unit}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: cs.onSurfaceVariant,
                                 ),
+                                textAlign: TextAlign.center,
                               ),
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  '₹${item.unitPrice.toStringAsFixed(2)}',
-                                  style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
-                                  textAlign: TextAlign.right,
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                '₹${item.unitPrice.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: cs.onSurfaceVariant,
                                 ),
+                                textAlign: TextAlign.right,
                               ),
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  '₹${item.totalPrice.toStringAsFixed(2)}',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                  textAlign: TextAlign.right,
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                '₹${item.totalPrice.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
                                 ),
+                                textAlign: TextAlign.right,
                               ),
-                            ],
-                          ),
-                        )),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
 
                     const Divider(height: 16),
 
                     // Discount Breakdown (if applied)
-                    if (order.discountType != null && order.calculatedDiscount > 0) ...[
+                    if (order.discountType != null &&
+                        order.calculatedDiscount > 0) ...[
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 2,
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               'Subtotal',
-                              style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: cs.onSurfaceVariant,
+                              ),
                             ),
                             Text(
                               _formatCurrency(order.subtotal),
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ],
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 2,
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -266,11 +376,19 @@ class OrderCard extends StatelessWidget {
                               order.discountType == DiscountType.percentage
                                   ? 'Discount (${order.discountAmount % 1 == 0 ? order.discountAmount.toInt() : order.discountAmount}%)'
                                   : 'Discount (Flat)',
-                              style: const TextStyle(fontSize: 13, color: Colors.green, fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.green,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             Text(
                               '-${_formatCurrency(order.calculatedDiscount)}',
-                              style: const TextStyle(fontSize: 13, color: Colors.green, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
@@ -280,7 +398,10 @@ class OrderCard extends StatelessWidget {
 
                     // Grand Total & Customer Phone
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -288,7 +409,10 @@ class OrderCard extends StatelessWidget {
                             order.customerPhone.isNotEmpty
                                 ? 'Customer Phone: ${order.customerPhone}'
                                 : 'No Phone Provided',
-                            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: cs.onSurfaceVariant,
+                            ),
                           ),
                           Text(
                             'Grand Total: ${_formatCurrency(order.finalBill)}',
@@ -300,9 +424,129 @@ class OrderCard extends StatelessWidget {
                         ],
                       ),
                     ),
+
+                    // ── Payment Breakdown in Expanded View (Total Received & Total Refunded) ──
+                    Container(
+                      margin: const EdgeInsets.only(
+                        top: 8,
+                        left: 12,
+                        right: 12,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerHighest.withValues(
+                          alpha: 0.35,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: cs.outlineVariant.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      child: Wrap(
+                        spacing: 20,
+                        runSpacing: 6,
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.arrow_downward,
+                                size: 14,
+                                color: Colors.green,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Total Received: ',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: cs.onSurfaceVariant,
+                                ),
+                              ),
+                              Text(
+                                _formatCurrency(creditTotal),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.arrow_upward,
+                                size: 14,
+                                color: Colors.deepOrange,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Total Refunded: ',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: cs.onSurfaceVariant,
+                                ),
+                              ),
+                              Text(
+                                _formatCurrency(debitTotal),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: debitTotal > 0
+                                      ? Colors.deepOrange
+                                      : cs.outline,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: paymentStatusColor.withValues(
+                                    alpha: 0.12,
+                                  ),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  paymentStatusLabel,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: paymentStatusColor,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _formatCurrency(paymentStatusAmount),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: paymentStatusColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-                crossFadeState: isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                crossFadeState: isExpanded
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
                 duration: const Duration(milliseconds: 250),
               ),
             ],
@@ -314,7 +558,15 @@ class OrderCard extends StatelessWidget {
 
   /// Wide desktop/tablet horizontal table-like row card layout.
   /// Items summary is placed in the leftmost column.
-  Widget _buildDesktopRow(BuildContext context, ThemeData theme, ColorScheme cs, Color statusColor) {
+  Widget _buildDesktopRow(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme cs,
+    Color statusColor,
+    String paymentStatusLabel,
+    Color paymentStatusColor,
+    double paymentStatusAmount,
+  ) {
     return Row(
       children: [
         // ── 1. Items Summary (Leftmost column) ──────────────────────────────
@@ -371,7 +623,9 @@ class OrderCard extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                order.customerPhone.isNotEmpty ? order.customerPhone : 'No phone',
+                order.customerPhone.isNotEmpty
+                    ? order.customerPhone
+                    : 'No phone',
                 style: TextStyle(
                   fontSize: 11,
                   color: cs.onSurfaceVariant,
@@ -393,7 +647,11 @@ class OrderCard extends StatelessWidget {
             children: [
               Text(
                 'Delivery Date',
-                style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
@@ -409,7 +667,7 @@ class OrderCard extends StatelessWidget {
 
         // ── 4. Total Bill ───────────────────────────────────────────────────
         SizedBox(
-          width: 115,
+          width: 110,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -417,7 +675,11 @@ class OrderCard extends StatelessWidget {
                 order.discountType != null && order.calculatedDiscount > 0
                     ? 'Total (Disc.)'
                     : 'Total Bill',
-                style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
@@ -425,6 +687,34 @@ class OrderCard extends StatelessWidget {
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: cs.primary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 14),
+
+        // ── 4b. Payment Status Indicator (To Collect / To Refund / Settled) ──
+        SizedBox(
+          width: 110,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                paymentStatusLabel,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: paymentStatusColor,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                _formatCurrency(paymentStatusAmount),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: paymentStatusColor,
                 ),
               ),
             ],
@@ -458,10 +748,7 @@ class OrderCard extends StatelessWidget {
         AnimatedRotation(
           turns: isExpanded ? 0.5 : 0.0,
           duration: const Duration(milliseconds: 200),
-          child: Icon(
-            Icons.keyboard_arrow_down,
-            color: cs.onSurfaceVariant,
-          ),
+          child: Icon(Icons.keyboard_arrow_down, color: cs.onSurfaceVariant),
         ),
       ],
     );
@@ -469,7 +756,15 @@ class OrderCard extends StatelessWidget {
 
   /// Compact mobile row layout.
   /// Items summary is placed in the leftmost column.
-  Widget _buildMobileRow(BuildContext context, ThemeData theme, ColorScheme cs, Color statusColor) {
+  Widget _buildMobileRow(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme cs,
+    Color statusColor,
+    String paymentStatusLabel,
+    Color paymentStatusColor,
+    double paymentStatusAmount,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -554,7 +849,11 @@ class OrderCard extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               order.customerName,
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurface),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: cs.onSurface,
+              ),
             ),
             if (order.customerPhone.isNotEmpty) ...[
               const SizedBox(width: 8),
@@ -567,26 +866,82 @@ class OrderCard extends StatelessWidget {
         ),
         const SizedBox(height: 8),
 
-        // Delivery Date & Total Bill
+        // Delivery Date & Payment Summary / Total Bill
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Row(
               children: [
-                Icon(Icons.calendar_today, size: 14, color: cs.onSurfaceVariant),
+                Icon(
+                  Icons.calendar_today,
+                  size: 14,
+                  color: cs.onSurfaceVariant,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   _formatDate(order.deliveryDate),
-                  style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
-            Text(
-              _formatCurrency(order.finalBill),
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: cs.primary,
-              ),
+            Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      order.discountType != null && order.calculatedDiscount > 0
+                          ? 'Total (Disc.)'
+                          : 'Total',
+                      style: TextStyle(fontSize: 10, color: cs.outline),
+                    ),
+                    Text(
+                      _formatCurrency(order.finalBill),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: cs.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: paymentStatusColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        paymentStatusLabel,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: paymentStatusColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      _formatCurrency(paymentStatusAmount),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: paymentStatusColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ],
         ),

@@ -34,6 +34,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/cart/widgets/cart_summary_sheet.dart';
 import '../../features/home/home_page.dart';
+import '../../features/ledger/ledger_page.dart';
 import '../../features/menu/menu_page.dart';
 import '../../features/orders/orders_page.dart';
 import '../../features/profile/profile_page.dart';
@@ -151,6 +152,11 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.menu,
       name: AppRouteNames.menu,
       builder: (context, state) => const MenuPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.ledger,
+      name: AppRouteNames.ledger,
+      builder: (context, state) => const LedgerPage(),
     ),
 
     // ── Modal Bottom Sheets ───────────────────────────────────────────────────

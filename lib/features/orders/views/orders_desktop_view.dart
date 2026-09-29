@@ -5,6 +5,7 @@ import '../../../core/routing/router_key.dart';
 import '../../../core/routing/routes.dart';
 import '../orders_providers.dart';
 import '../widgets/order_card.dart';
+import '../widgets/orders_filter_toolbar.dart';
 
 class OrdersDesktopView extends ConsumerWidget {
   const OrdersDesktopView({super.key});
@@ -14,28 +15,10 @@ class OrdersDesktopView extends ConsumerWidget {
     (icon: Icons.store_outlined, selectedIcon: Icons.store, label: 'Shop', route: AppRoutes.shop),
     (icon: Icons.restaurant_menu_outlined, selectedIcon: Icons.restaurant_menu, label: 'Menu', route: AppRoutes.menu),
     (icon: Icons.receipt_long_outlined, selectedIcon: Icons.receipt_long, label: 'Orders', route: AppRoutes.orders),
+    (icon: Icons.account_balance_wallet_outlined, selectedIcon: Icons.account_balance_wallet, label: 'Ledger', route: AppRoutes.ledger),
     (icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Profile', route: AppRoutes.profile),
     (icon: Icons.settings_outlined, selectedIcon: Icons.settings, label: 'Settings', route: AppRoutes.settings),
   ];
-
-  static const _statusOptions = [
-    'All',
-    'Placed',
-    'Preparing',
-    'Ready',
-    'Delivering',
-    'Delivered',
-    'Completed',
-    'Cancelled',
-  ];
-
-  String _formatDate(DateTime date) {
-    final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -48,7 +31,7 @@ class OrdersDesktopView extends ConsumerWidget {
     return Scaffold(
       body: Row(
         children: [
-          // Side Navigation Drawer
+          // Navigation Drawer
           NavigationDrawer(
             selectedIndex: 3, // Orders selected
             onDestinationSelected: (i) => AppNav.go(_navItems[i].route),
@@ -89,7 +72,7 @@ class OrdersDesktopView extends ConsumerWidget {
           Expanded(
             child: Column(
               children: [
-                // Top Header Toolbar
+                // Top Header: Page Title
                 Container(
                   height: 64,
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -103,45 +86,7 @@ class OrdersDesktopView extends ConsumerWidget {
                         'Orders Management',
                         style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(width: 24),
-                      // Search Bar (search by order item, customer name)
-                      SizedBox(
-                        width: 320,
-                        child: SearchBar(
-                          hintText: 'Search order item, customer name…',
-                          leading: const Icon(Icons.search, size: 20),
-                          onChanged: vm.setSearchQuery,
-                          padding: const WidgetStatePropertyAll(
-                            EdgeInsets.symmetric(horizontal: 14),
-                          ),
-                        ),
-                      ),
                       const Spacer(),
-                      // Filter by Date Picker button
-                      if (state.selectedDate != null)
-                        Chip(
-                          avatar: const Icon(Icons.calendar_today, size: 16),
-                          label: Text(_formatDate(state.selectedDate!)),
-                          onDeleted: vm.clearDateFilter,
-                          deleteIcon: const Icon(Icons.close, size: 16),
-                        )
-                      else
-                        OutlinedButton.icon(
-                          onPressed: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: DateTime.now(),
-                              firstDate: DateTime(2025),
-                              lastDate: DateTime(2030),
-                            );
-                            if (picked != null) {
-                              vm.setSelectedDate(picked);
-                            }
-                          },
-                          icon: const Icon(Icons.calendar_month_outlined, size: 18),
-                          label: const Text('Filter by Date'),
-                        ),
-                      const SizedBox(width: 8),
                       IconButton.outlined(
                         onPressed: () => vm.loadOrders(),
                         icon: const Icon(Icons.refresh, size: 18),
@@ -151,47 +96,10 @@ class OrdersDesktopView extends ConsumerWidget {
                   ),
                 ),
 
-                // Status Filter Bar
-                Container(
-                  height: 52,
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainerLow,
-                    border: Border(bottom: BorderSide(color: cs.outlineVariant)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Text(
-                        'Status:',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: _statusOptions.map((status) {
-                            final count = status == 'All'
-                                ? state.allOrders.length
-                                : state.allOrders.where((o) => o.status.toLowerCase() == status.toLowerCase()).length;
-                            final isSelected = state.statusFilter == status;
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: Center(
-                                child: FilterChip(
-                                  label: Text('$status ($count)'),
-                                  selected: isSelected,
-                                  onSelected: (_) => vm.setStatusFilter(status),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                // Between page title and status select: Search + Date filter row, then Multi-Select Statuses
+                const OrdersFilterToolbar(),
 
-                // Orders List
+                // Main Content Body (List of Order Cards)
                 Expanded(
                   child: filteredOrders.isEmpty
                       ? Center(
@@ -201,20 +109,20 @@ class OrdersDesktopView extends ConsumerWidget {
                               Icon(Icons.receipt_long_outlined, size: 64, color: cs.outline),
                               const SizedBox(height: 16),
                               Text('No orders found', style: theme.textTheme.headlineSmall),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 6),
                               Text(
-                                'Try clearing your search query or adjusting your filters.',
-                                style: TextStyle(color: cs.outline),
+                                'Filtered by: ${state.dateTitle}',
+                                style: TextStyle(color: cs.outline, fontSize: 14),
                               ),
                               const SizedBox(height: 16),
                               OutlinedButton.icon(
                                 onPressed: () {
                                   vm.setSearchQuery('');
-                                  vm.setStatusFilter('All');
-                                  vm.clearDateFilter();
+                                  vm.resetDefaultStatuses();
+                                  vm.setDateFilter(DateTime.now());
                                 },
-                                icon: const Icon(Icons.filter_alt_off),
-                                label: const Text('Reset All Filters'),
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Reset to Today & Default Statuses'),
                               ),
                             ],
                           ),
@@ -225,11 +133,14 @@ class OrdersDesktopView extends ConsumerWidget {
                           itemBuilder: (context, index) {
                             final order = filteredOrders[index];
                             final isExpanded = state.expandedOrderIds.contains(order.id);
-                            return OrderCard(
-                              order: order,
-                              isExpanded: isExpanded,
-                              onToggleExpand: () => vm.toggleExpanded(order.id),
-                              onStatusChanged: (newStatus) => vm.updateOrderStatus(order.id, newStatus),
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: OrderCard(
+                                order: order,
+                                isExpanded: isExpanded,
+                                onToggleExpand: () => vm.toggleExpanded(order.id),
+                                onStatusChanged: (newStatus) => vm.updateOrderStatus(order.id, newStatus),
+                              ),
                             );
                           },
                         ),

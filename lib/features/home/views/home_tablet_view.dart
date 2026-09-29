@@ -116,9 +116,9 @@ class HomeTabletView extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: HomeKpiCard(
-                          title: "Today's Collection",
-                          value: '₹${state.todayMoneyCollection.toStringAsFixed(0)}',
-                          subtitle: '${state.todayOrdersCount} today • ₹${state.totalMoneyCollection.toStringAsFixed(0)} overall',
+                          title: 'Total Money to Collect',
+                          value: '₹${state.todayMoneyToCollect.toStringAsFixed(0)}',
+                          subtitle: '₹${state.todayNetReceived.toStringAsFixed(0)} collected • ${state.todayOrdersCount} today',
                           icon: Icons.account_balance_wallet_outlined,
                           backgroundColor: cs.primaryContainer,
                           foregroundColor: cs.onPrimaryContainer,

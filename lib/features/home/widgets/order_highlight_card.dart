@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/models/order_model.dart';
+import '../../ledger/ledger_providers.dart';
 import '../../orders/widgets/edit_order_modal.dart';
 
-/// Card showing customer info, total bill, and 1-line item preview for an order.
+/// Card showing customer info, payment status (to collect/refund), and 1-line item preview for an order.
 ///
 /// Tapping the card opens the editable order summary modal/dialog via [showEditOrderModal]
 /// (desktop = Dialog, mobile/tablet = Modal Bottom Sheet).
-class OrderHighlightCard extends StatelessWidget {
+class OrderHighlightCard extends ConsumerWidget {
   const OrderHighlightCard({
     super.key,
     required this.order,
@@ -20,6 +22,16 @@ class OrderHighlightCard extends StatelessWidget {
       return q.toInt().toString();
     }
     return q.toStringAsFixed(1);
+  }
+
+  static String _formatCurrency(double amount) {
+    final formatted = amount.toStringAsFixed(2);
+    final parts = formatted.split('.');
+    final integerPart = parts[0].replaceAll(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      ',',
+    );
+    return '₹ $integerPart.${parts[1]}';
   }
 
   static String _formatOrderTime(DateTime dt) {
@@ -48,16 +60,47 @@ class OrderHighlightCard extends StatelessWidget {
         return Colors.blue;
       case 'cancelled':
         return Colors.red;
+      case 'returned':
+        return Colors.deepOrange;
       default:
         return Colors.purple;
     }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final statusColor = _getStatusColor(order.status);
+
+    // Watch payments for this specific order
+    final payments = ref.watch(orderPaymentsProvider(order.id));
+    final credit = payments
+        .where((p) => p.isCredit)
+        .fold<double>(0.0, (sum, p) => sum + p.amount);
+    final debit = payments
+        .where((p) => !p.isCredit)
+        .fold<double>(0.0, (sum, p) => sum + p.amount);
+    final netReceived = credit - debit;
+    final balance = order.finalBill - netReceived;
+
+    final String paymentStatusLabel;
+    final Color paymentStatusColor;
+    final double paymentStatusAmount;
+
+    if (balance > 0.009) {
+      paymentStatusLabel = 'To Collect';
+      paymentStatusColor = Colors.orange.shade800;
+      paymentStatusAmount = balance;
+    } else if (balance < -0.009) {
+      paymentStatusLabel = 'To Refund';
+      paymentStatusColor = Colors.red.shade700;
+      paymentStatusAmount = balance.abs();
+    } else {
+      paymentStatusLabel = 'Settled';
+      paymentStatusColor = Colors.green.shade700;
+      paymentStatusAmount = 0.0;
+    }
 
     // Build the 1-line item list preview with quantities
     final oneLineItems = order.items.isEmpty
@@ -85,7 +128,7 @@ class OrderHighlightCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top Row: Avatar + Customer & Order Info + Total & Status
+              // Top Row: Avatar + Customer & Order Info + Payment Status & Fulfillment Badge
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -148,11 +191,20 @@ class OrderHighlightCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '₹${order.finalBill.toStringAsFixed(0)}',
+                        paymentStatusLabel,
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: cs.primary,
+                          color: paymentStatusColor,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _formatCurrency(paymentStatusAmount),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: paymentStatusColor,
                         ),
                       ),
                       const SizedBox(height: 4),

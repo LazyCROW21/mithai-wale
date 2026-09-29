@@ -90,9 +90,9 @@ class HomeMobileView extends ConsumerWidget {
             children: [
               Expanded(
                 child: HomeKpiCard(
-                  title: "Today's Collection",
-                  value: '₹${state.todayMoneyCollection.toStringAsFixed(0)}',
-                  subtitle: '${state.todayOrdersCount} today',
+                  title: 'To Collect',
+                  value: '₹${state.todayMoneyToCollect.toStringAsFixed(0)}',
+                  subtitle: '₹${state.todayNetReceived.toStringAsFixed(0)} collected',
                   icon: Icons.account_balance_wallet_outlined,
                   backgroundColor: cs.primaryContainer,
                   foregroundColor: cs.onPrimaryContainer,

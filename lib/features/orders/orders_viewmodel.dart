@@ -3,7 +3,7 @@ import '../../core/database/repositories/orders_repository.dart';
 import '../../core/di/service_locator.dart';
 import 'orders_state.dart';
 
-/// ViewModel managing state, search, filter, and expandable cards for Orders.
+/// ViewModel managing state, search, filter, date navigation, and expandable cards for Orders.
 class OrdersViewModel extends Notifier<OrdersState> {
   IOrdersRepository? get _ordersRepo =>
       sl.isRegistered<IOrdersRepository>() ? sl<IOrdersRepository>() : null;
@@ -16,10 +16,10 @@ class OrdersViewModel extends Notifier<OrdersState> {
         final list = repo.getAllSync();
         return OrdersState(allOrders: list);
       } catch (_) {
-        return const OrdersState();
+        return OrdersState();
       }
     }
-    return const OrdersState();
+    return OrdersState();
   }
 
   /// Reloads all orders from Hive DB asynchronously.
@@ -47,16 +47,70 @@ class OrdersViewModel extends Notifier<OrdersState> {
     state = state.copyWith(searchQuery: query);
   }
 
-  void setStatusFilter(String status) {
-    state = state.copyWith(statusFilter: status);
+  /// Toggles a status in the multi-select status filter.
+  void toggleStatusFilter(String status) {
+    final current = Set<String>.from(state.selectedStatuses);
+    final match = current.firstWhere(
+      (s) => s.toLowerCase() == status.toLowerCase(),
+      orElse: () => '',
+    );
+    if (match.isNotEmpty) {
+      current.remove(match);
+    } else {
+      current.add(status);
+    }
+    state = state.copyWith(selectedStatuses: current);
   }
 
-  void setSelectedDate(DateTime? date) {
-    state = state.copyWith(selectedDate: () => date);
+  /// Resets statuses to default: "Preparing", "Placed", "Delivering".
+  void resetDefaultStatuses() {
+    state = state.copyWith(selectedStatuses: const {'Preparing', 'Placed', 'Delivering'});
   }
 
-  void clearDateFilter() {
-    state = state.copyWith(selectedDate: () => null);
+  /// Sets single date or date range.
+  void setDateFilter(DateTime start, [DateTime? end]) {
+    final s = DateTime(start.year, start.month, start.day);
+    final e = end != null ? DateTime(end.year, end.month, end.day) : null;
+    state = state.copyWith(
+      selectedDate: s,
+      selectedEndDate: () => (e != null && !OrdersState.isSameDay(s, e)) ? e : null,
+    );
+  }
+
+  /// Navigates date backwards:
+  /// - If single date: previous day
+  /// - If range: shifts range back by the span duration
+  void navigateDatePrevious() {
+    if (state.selectedEndDate == null) {
+      final prev = state.selectedDate.subtract(const Duration(days: 1));
+      state = state.copyWith(selectedDate: prev);
+    } else {
+      final spanDays = state.selectedEndDate!.difference(state.selectedDate).inDays.abs() + 1;
+      final newStart = state.selectedDate.subtract(Duration(days: spanDays));
+      final newEnd = state.selectedEndDate!.subtract(Duration(days: spanDays));
+      state = state.copyWith(
+        selectedDate: newStart,
+        selectedEndDate: () => newEnd,
+      );
+    }
+  }
+
+  /// Navigates date forwards:
+  /// - If single date: next day
+  /// - If range: shifts range forward by the span duration
+  void navigateDateNext() {
+    if (state.selectedEndDate == null) {
+      final next = state.selectedDate.add(const Duration(days: 1));
+      state = state.copyWith(selectedDate: next);
+    } else {
+      final spanDays = state.selectedEndDate!.difference(state.selectedDate).inDays.abs() + 1;
+      final newStart = state.selectedDate.add(Duration(days: spanDays));
+      final newEnd = state.selectedEndDate!.add(Duration(days: spanDays));
+      state = state.copyWith(
+        selectedDate: newStart,
+        selectedEndDate: () => newEnd,
+      );
+    }
   }
 
   void toggleExpanded(String orderId) {
@@ -93,4 +147,3 @@ class OrdersViewModel extends Notifier<OrdersState> {
     await _ordersRepo?.updateStatus(orderId, newStatus);
   }
 }
-

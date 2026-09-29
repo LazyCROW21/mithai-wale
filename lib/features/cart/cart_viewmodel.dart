@@ -99,11 +99,13 @@ class CartViewModel extends Notifier<CartState> {
   }
 
   /// Creates and saves an order from current cart items to Hive with status "Placed",
-  /// then clears the cart.
+  /// applying any specified discount, then clears the cart.
   Future<OrderModel?> checkout({
     String customerName = 'Walk-in Customer',
     String customerPhone = '+91 98765 43210',
     DateTime? deliveryDate,
+    DiscountType? discountType,
+    double discountAmount = 0.0,
   }) async {
     if (state.isEmpty) return null;
 
@@ -115,6 +117,17 @@ class CartViewModel extends Notifier<CartState> {
       unitPrice: ci.item.price,
     )).toList();
 
+    final subtotal = state.totalPrice;
+    double calcDiscount = 0.0;
+    if (discountType != null && discountAmount > 0) {
+      if (discountType == DiscountType.percentage) {
+        calcDiscount = (subtotal * discountAmount) / 100.0;
+      } else {
+        calcDiscount = discountAmount.clamp(0.0, subtotal);
+      }
+    }
+    final finalBill = (subtotal - calcDiscount).clamp(0.0, double.infinity);
+
     final order = OrderModel(
       id: id,
       customerName: customerName.trim().isEmpty ? 'Walk-in Customer' : customerName.trim(),
@@ -122,8 +135,10 @@ class CartViewModel extends Notifier<CartState> {
       items: orderItems,
       deliveryDate: deliveryDate ?? DateTime.now(),
       orderDate: DateTime.now(),
-      totalBill: state.totalPrice,
+      totalBill: finalBill,
       status: 'Placed',
+      discountType: discountType,
+      discountAmount: discountAmount,
     );
 
     if (sl.isRegistered<IOrdersRepository>()) {

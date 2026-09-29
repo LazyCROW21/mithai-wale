@@ -212,7 +212,9 @@ class _ProductGrid extends ConsumerWidget {
                 child: Container(
                   width: double.infinity,
                   color: cs.surfaceContainerHighest,
-                  child: Center(child: Text(emoji, style: const TextStyle(fontSize: 56))),
+                  child: p.imageBytes != null
+                      ? Image.memory(p.imageBytes!, fit: BoxFit.cover, width: double.infinity, height: double.infinity)
+                      : Center(child: Text(emoji, style: const TextStyle(fontSize: 56))),
                 ),
               ),
               Padding(

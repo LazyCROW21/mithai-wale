@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:hive/hive.dart';
 
 import '../models/menu_item_model.dart';
@@ -34,6 +36,7 @@ class HiveMenuRepository implements IMenuRepository {
     required double price,
     required String unit,
     bool isAvailable = true,
+    Uint8List? imageBytes,
   }) async {
     final nextId = _nextId();
     final item = MenuItem(
@@ -44,6 +47,7 @@ class HiveMenuRepository implements IMenuRepository {
       price: price,
       unit: unit,
       isAvailable: isAvailable,
+      imageBytes: imageBytes,
       createdAt: DateTime.now(),
     );
     await _box.put(nextId, item.toMap());

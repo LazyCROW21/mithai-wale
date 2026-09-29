@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/database/models/category_model.dart';
@@ -54,6 +55,7 @@ class MenuViewModel extends Notifier<MenuState> {
     required double price,
     required String unit,
     bool isAvailable = true,
+    Uint8List? imageBytes,
   }) async {
     try {
       await _menuRepo.add(
@@ -63,6 +65,7 @@ class MenuViewModel extends Notifier<MenuState> {
         price: price,
         unit: unit,
         isAvailable: isAvailable,
+        imageBytes: imageBytes,
       );
     } catch (e) {
       state = state.copyWith(error: 'Failed to add item: $e');

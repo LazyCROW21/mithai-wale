@@ -10,9 +10,11 @@ import 'repositories/hive_cart_repository.dart';
 import 'repositories/hive_category_repository.dart';
 import 'repositories/hive_menu_repository.dart';
 import 'repositories/hive_orders_repository.dart';
+import 'repositories/hive_payments_repository.dart';
 import 'repositories/hive_settings_repository.dart';
 import 'repositories/menu_repository.dart';
 import 'repositories/orders_repository.dart';
+import 'repositories/payments_repository.dart';
 import 'repositories/settings_repository.dart';
 
 /// Central access point for all database repositories (Hive-backed).
@@ -23,11 +25,13 @@ class DatabaseProvider {
     required Box<Map> menuBox,
     required Box<Map> cartBox,
     required Box<Map> ordersBox,
+    required Box<Map> paymentsBox,
   }) : settings = HiveSettingsRepository(settingsBox),
        categories = HiveCategoryRepository(categoriesBox),
        menu = HiveMenuRepository(menuBox),
        cart = HiveCartRepository(cartBox),
-       orders = HiveOrdersRepository(ordersBox);
+       orders = HiveOrdersRepository(ordersBox),
+       payments = HivePaymentsRepository(paymentsBox);
 
   // ── Repositories ────────────────────────────────────────────────────────────
 
@@ -45,6 +49,9 @@ class DatabaseProvider {
 
   /// Orders management repository.
   final IOrdersRepository orders;
+
+  /// Payments ledger repository.
+  final IPaymentsRepository payments;
 
   // ── Lifecycle ────────────────────────────────────────────────────────────────
 
@@ -70,6 +77,7 @@ class DatabaseProvider {
     final menuBox = await Hive.openBox<Map>('menu_items');
     final cartBox = await Hive.openBox<Map>('cart_items');
     final ordersBox = await Hive.openBox<Map>('orders');
+    final paymentsBox = await Hive.openBox<Map>('payments');
 
     final provider = DatabaseProvider._(
       settingsBox: settingsBox,
@@ -77,6 +85,7 @@ class DatabaseProvider {
       menuBox: menuBox,
       cartBox: cartBox,
       ordersBox: ordersBox,
+      paymentsBox: paymentsBox,
     );
 
     await provider._runMigrations();

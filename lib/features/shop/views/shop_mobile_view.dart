@@ -252,7 +252,9 @@ class _ProductCard extends ConsumerWidget {
             child: Container(
               width: double.infinity,
               color: cs.surfaceContainerHighest,
-              child: Center(child: Text(emoji, style: const TextStyle(fontSize: 48))),
+              child: product.imageBytes != null
+                  ? Image.memory(product.imageBytes!, fit: BoxFit.cover, width: double.infinity, height: double.infinity)
+                  : Center(child: Text(emoji, style: const TextStyle(fontSize: 48))),
             ),
           ),
           Padding(

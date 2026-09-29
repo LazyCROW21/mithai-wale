@@ -58,6 +58,24 @@ class MithaiWaleApp extends ConsumerWidget {
           brightness: Brightness.light,
         ),
         useMaterial3: true,
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            elevation: 2.5,
+            shadowColor: Colors.black45,
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            elevation: 3,
+            shadowColor: Colors.black38,
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            elevation: 1,
+            shadowColor: Colors.black12,
+          ),
+        ),
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
@@ -65,6 +83,24 @@ class MithaiWaleApp extends ConsumerWidget {
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            elevation: 2.5,
+            shadowColor: Colors.black87,
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            elevation: 3,
+            shadowColor: Colors.black54,
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            elevation: 1,
+            shadowColor: Colors.black26,
+          ),
+        ),
       ),
       themeMode: themeMode,
     );

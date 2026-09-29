@@ -120,12 +120,12 @@ class HomeDesktopView extends ConsumerWidget {
                       // Top 3 KPI Metric Cards
                       Row(
                         children: [
-                          // Card 1: Today's Money Collection
+                          // Card 1: Total Money to Collect
                           Expanded(
                             child: HomeKpiCard(
-                              title: "Today's Money Collection",
-                              value: '₹${state.todayMoneyCollection.toStringAsFixed(0)}',
-                              subtitle: '${state.todayOrdersCount} today • ₹${state.totalMoneyCollection.toStringAsFixed(0)} all orders',
+                              title: 'Total Money to Collect',
+                              value: '₹${state.todayMoneyToCollect.toStringAsFixed(0)}',
+                              subtitle: '₹${state.todayNetReceived.toStringAsFixed(0)} collected • ${state.todayOrdersCount} orders',
                               icon: Icons.account_balance_wallet_outlined,
                               backgroundColor: cs.primaryContainer,
                               foregroundColor: cs.onPrimaryContainer,

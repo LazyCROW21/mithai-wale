@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/database/models/menu_item_model.dart';
 import '../../../core/layout/layout_extensions.dart';
+import '../../../core/utils/image_utils.dart';
 import '../menu_providers.dart';
 import 'manage_categories_dialog.dart';
 
@@ -46,6 +49,8 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
   int? _selectedCategoryId;
   String _selectedUnit = 'kg';
   bool _isAvailable = true;
+  Uint8List? _selectedImageBytes;
+  bool _isProcessingImage = false;
 
   static const _units = ['per piece', 'gm', 'kg', 'litre'];
 
@@ -59,6 +64,7 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
     _selectedCategoryId = item?.categoryId;
     _selectedUnit = item?.unit ?? 'kg';
     _isAvailable = item?.isAvailable ?? true;
+    _selectedImageBytes = item?.imageBytes;
   }
 
   @override
@@ -67,6 +73,24 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
     _descController.dispose();
     _priceController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    setState(() => _isProcessingImage = true);
+    try {
+      final bytes = await ImageUtils.pickAndCompressImage(
+        source: source,
+        maxDimension: 512,
+        quality: 65,
+      );
+      if (bytes != null && mounted) {
+        setState(() => _selectedImageBytes = bytes);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessingImage = false);
+      }
+    }
   }
 
   Future<void> _submit() async {
@@ -85,6 +109,7 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
         price: price,
         unit: _selectedUnit,
         isAvailable: _isAvailable,
+        imageBytes: _selectedImageBytes,
       );
       await vm.updateMenuItem(updated);
     } else {
@@ -95,6 +120,7 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
         price: price,
         unit: _selectedUnit,
         isAvailable: _isAvailable,
+        imageBytes: _selectedImageBytes,
       );
     }
 
@@ -132,33 +158,113 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
             ),
             const SizedBox(height: 16),
 
-            // Item ID Display (Auto Generated)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: cs.outlineVariant),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.qr_code, size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Item ID: ',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: cs.onSurfaceVariant),
-                  ),
-                  Text(
-                    isEditing ? '#MW-${widget.itemToEdit!.id.toString().padLeft(4, '0')}' : '#MW-AUTO (Gen on save)',
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      fontWeight: FontWeight.bold,
-                      color: cs.primary,
+            // Image Upload Section (Max 512x512 pixels compressed)
+            if (_selectedImageBytes != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: cs.outlineVariant),
+                ),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.memory(
+                        _selectedImageBytes!,
+                        width: 72,
+                        height: 72,
+                        fit: BoxFit.cover,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Item Image Selected',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Optimized JPEG (≤512×512 px) • Stored in Hive',
+                            style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                                onPressed: _isProcessingImage ? null : () => _pickImage(ImageSource.gallery),
+                                icon: const Icon(Icons.refresh, size: 14),
+                                label: const Text('Change', style: TextStyle(fontSize: 12)),
+                              ),
+                              const SizedBox(width: 8),
+                              TextButton.icon(
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                                onPressed: _isProcessingImage ? null : () => setState(() => _selectedImageBytes = null),
+                                icon: Icon(Icons.delete_outline, size: 14, color: cs.error),
+                                label: Text('Remove', style: TextStyle(fontSize: 12, color: cs.error)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ] else ...[
+              InkWell(
+                onTap: _isProcessingImage ? null : () => _pickImage(ImageSource.gallery),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: cs.outlineVariant),
+                  ),
+                  child: Center(
+                    child: _isProcessingImage
+                        ? const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+                              SizedBox(width: 12),
+                              Text('Compressing image (max 512×512)...', style: TextStyle(fontSize: 13)),
+                            ],
+                          )
+                        : Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.add_photo_alternate_outlined, size: 32, color: cs.primary),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Upload Item Image',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: cs.onSurface),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Auto-resized to max 512×512 px and compressed for efficient storage',
+                                style: TextStyle(fontSize: 11, color: cs.outline),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
 
             // Title
@@ -168,7 +274,6 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
                 labelText: 'Title *',
                 hintText: 'e.g. Motichoor Ladoo',
                 border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.fastfood_outlined),
               ),
               validator: (val) {
                 if (val == null || val.trim().isEmpty) {
@@ -187,7 +292,6 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
                 labelText: 'Description (Optional)',
                 hintText: 'e.g. Fresh pure ghee motichoor ladoo made with dry fruits',
                 border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.description_outlined),
               ),
             ),
             const SizedBox(height: 16),
@@ -202,7 +306,6 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
                     decoration: const InputDecoration(
                       labelText: 'Category (Optional)',
                       border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.category_outlined),
                     ),
                     items: [
                       const DropdownMenuItem<int?>(
@@ -293,7 +396,7 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
                 ),
                 const SizedBox(width: 12),
                 FilledButton.icon(
-                  onPressed: _submit,
+                  onPressed: _isProcessingImage ? null : _submit,
                   icon: Icon(isEditing ? Icons.save : Icons.add),
                   label: Text(isEditing ? 'Save Changes' : 'Add Item'),
                 ),

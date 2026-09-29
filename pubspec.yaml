@@ -28,6 +28,8 @@ dependencies:
   # ─── Dependency Injection ────────────────────────────────────────────────────
   get_it: ^8.0.3
   share_plus: ^13.3.0
+  image_picker: ^1.2.3
+  image: ^4.10.1
 
 dev_dependencies:
   flutter_test:

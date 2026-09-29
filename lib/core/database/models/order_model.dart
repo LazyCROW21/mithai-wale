@@ -102,7 +102,7 @@ class OrderModel {
   final DateTime orderDate;
   final double totalBill;
 
-  /// Order status: 'Placed', 'Preparing', 'Ready', 'Delivering', 'Delivered', 'Completed', 'Cancelled'
+  /// Order status: 'Placed', 'Preparing', 'Ready', 'Delivering', 'Delivered', 'Completed', 'Cancelled', 'Returned'
   final String status;
 
   /// Discount type: percentage or flat

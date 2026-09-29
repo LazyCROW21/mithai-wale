@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 @immutable
@@ -10,10 +11,25 @@ class MenuItem {
     required this.price,
     required this.unit,
     this.isAvailable = true,
+    this.imageBytes,
     required this.createdAt,
   });
 
   factory MenuItem.fromMap(Map<dynamic, dynamic> map) {
+    Uint8List? parseBytes(dynamic val) {
+      if (val == null) return null;
+      if (val is Uint8List) return val;
+      if (val is List) return Uint8List.fromList(List<int>.from(val));
+      if (val is String && val.isNotEmpty) {
+        try {
+          return base64Decode(val);
+        } catch (_) {
+          return null;
+        }
+      }
+      return null;
+    }
+
     return MenuItem(
       id: map['id'] as int,
       title: map['title'] as String,
@@ -22,6 +38,7 @@ class MenuItem {
       price: (map['price'] as num).toDouble(),
       unit: map['unit'] as String,
       isAvailable: map['isAvailable'] as bool? ?? true,
+      imageBytes: parseBytes(map['imageBytes'] ?? map['imageBase64']),
       createdAt: map['createdAt'] is String
           ? DateTime.parse(map['createdAt'] as String)
           : (map['createdAt'] as DateTime? ?? DateTime.now()),
@@ -35,6 +52,7 @@ class MenuItem {
   final double price;
   final String unit;
   final bool isAvailable;
+  final Uint8List? imageBytes;
   final DateTime createdAt;
 
   Map<String, dynamic> toMap() {
@@ -46,6 +64,7 @@ class MenuItem {
       'price': price,
       'unit': unit,
       'isAvailable': isAvailable,
+      'imageBytes': imageBytes,
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -58,6 +77,7 @@ class MenuItem {
     double? price,
     String? unit,
     bool? isAvailable,
+    Object? imageBytes = _undefined,
     DateTime? createdAt,
   }) {
     return MenuItem(
@@ -68,6 +88,7 @@ class MenuItem {
       price: price ?? this.price,
       unit: unit ?? this.unit,
       isAvailable: isAvailable ?? this.isAvailable,
+      imageBytes: imageBytes == _undefined ? this.imageBytes : imageBytes as Uint8List?,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -84,6 +105,7 @@ class MenuItem {
           price == other.price &&
           unit == other.unit &&
           isAvailable == other.isAvailable &&
+          listEquals(imageBytes, other.imageBytes) &&
           createdAt == other.createdAt;
 
   @override
@@ -95,6 +117,7 @@ class MenuItem {
         price,
         unit,
         isAvailable,
+        imageBytes == null ? 0 : Object.hashAll(imageBytes!),
         createdAt,
       );
 }

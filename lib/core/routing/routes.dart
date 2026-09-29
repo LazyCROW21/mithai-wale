@@ -24,6 +24,7 @@ abstract final class AppRoutes {
   static const profile = '/profile';
   static const settings = '/settings';
   static const menu = '/menu';
+  static const ledger = '/ledger';
 
   // ── Modal bottom sheets ───────────────────────────────────────────────────
   /// Path template — use [productDetailPath] to generate the concrete path.
@@ -47,6 +48,7 @@ abstract final class AppRouteNames {
   static const profile = 'profile';
   static const settings = 'settings';
   static const menu = 'menu';
+  static const ledger = 'ledger';
 
   // Modals
   static const productDetail = 'product-detail';
