@@ -58,9 +58,46 @@ final themeModeProvider =
 
 // ── Locale ────────────────────────────────────────────────────────────────────
 
+/// Manages the app-wide [Locale] and persists it via [ISettingsRepository].
+///
+/// Supported locales:
+/// - `Locale('en')` — English
+/// - `Locale('gu')` — Gujarati
+/// - `null`          — System / device default
+class LocaleNotifier extends AsyncNotifier<Locale?> {
+  static const _key = 'app_locale';
+
+  @override
+  Future<Locale?> build() async {
+    final repo = sl<ISettingsRepository>();
+    final stored = await repo.get(_key);
+    return _parse(stored);
+  }
+
+  /// Persists [locale] and updates the reactive state.
+  /// Pass `null` to reset to system default.
+  Future<void> setLocale(Locale? locale) async {
+    final repo = sl<ISettingsRepository>();
+    if (locale == null) {
+      await repo.remove(_key);
+      state = const AsyncData(null);
+    } else {
+      await repo.set(_key, locale.languageCode);
+      state = AsyncData(locale);
+    }
+  }
+
+  static Locale? _parse(String? value) => switch (value) {
+        'en' => const Locale('en'),
+        'gu' => const Locale('gu'),
+        _ => null,
+      };
+}
+
 /// App-wide locale provider.
-/// Defaults to the device locale. Expand to persist via settings if needed.
-final localeProvider = StateProvider<Locale?>((ref) => null);
+/// Returns [AsyncValue<Locale?>] — `null` indicates device default.
+final localeProvider =
+    AsyncNotifierProvider<LocaleNotifier, Locale?>(LocaleNotifier.new);
 
 // ── Auth (placeholder) ────────────────────────────────────────────────────────
 

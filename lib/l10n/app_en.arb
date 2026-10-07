@@ -1,0 +1,239 @@
+{
+  "@@locale": "en",
+  "appName": "Mithai Wale",
+  "@appName": {
+    "description": "The title of the application"
+  },
+  "navHome": "Home",
+  "@navHome": {
+    "description": "Navigation bar label for Home"
+  },
+  "navShop": "Shop",
+  "@navShop": {
+    "description": "Navigation bar label for Shop"
+  },
+  "navMenu": "Menu",
+  "@navMenu": {
+    "description": "Navigation bar label for Menu"
+  },
+  "navOrders": "Orders",
+  "@navOrders": {
+    "description": "Navigation bar label for Orders"
+  },
+  "navProfile": "Profile",
+  "@navProfile": {
+    "description": "Navigation bar label for Profile"
+  },
+  "navSettings": "Settings",
+  "@navSettings": {
+    "description": "Navigation bar label for Settings"
+  },
+  "navCart": "Cart",
+  "@navCart": {
+    "description": "Navigation bar label for Cart"
+  },
+
+  "appearance": "Appearance",
+  "@appearance": {
+    "description": "Header for appearance and theme settings"
+  },
+  "themeSystem": "System Default",
+  "@themeSystem": {
+    "description": "Option for system default theme"
+  },
+  "themeSystemDesc": "Adapt automatically to operating system theme setting",
+  "@themeSystemDesc": {
+    "description": "Subtitle describing system default theme"
+  },
+  "themeLight": "Light Mode",
+  "@themeLight": {
+    "description": "Option for light theme"
+  },
+  "themeLightDesc": "Clean warm saffron light theme",
+  "@themeLightDesc": {
+    "description": "Subtitle describing light theme"
+  },
+  "themeDark": "Dark Mode",
+  "@themeDark": {
+    "description": "Option for dark theme"
+  },
+  "themeDarkDesc": "Sleek dark theme for night usage",
+  "@themeDarkDesc": {
+    "description": "Subtitle describing dark theme"
+  },
+
+  "language": "Language",
+  "@language": {
+    "description": "Header for language settings"
+  },
+  "languageSubtitle": "Choose your preferred application language",
+  "@languageSubtitle": {
+    "description": "Subtitle explaining language setting"
+  },
+  "languageEnglish": "English",
+  "@languageEnglish": {
+    "description": "Language label for English"
+  },
+  "languageGujarati": "ગુજરાતી (Gujarati)",
+  "@languageGujarati": {
+    "description": "Language label for Gujarati"
+  },
+
+  "menuCatalogManagement": "Menu & Catalog Management",
+  "@menuCatalogManagement": {
+    "description": "Title of the catalog management card"
+  },
+  "menuCatalogDesc": "Add, edit and organize sweets menu items with auto-gen IDs, custom categories, pricing, and units.",
+  "@menuCatalogDesc": {
+    "description": "Description of the menu & catalog management feature"
+  },
+  "openMenu": "Open Menu",
+  "@openMenu": {
+    "description": "Action button to open the menu screen"
+  },
+  "categories": "Categories",
+  "@categories": {
+    "description": "Button to open category management"
+  },
+  "manageCategories": "Manage Categories",
+  "@manageCategories": {
+    "description": "Title and button for managing categories"
+  },
+
+  "storeInformation": "Store Information",
+  "@storeInformation": {
+    "description": "Header for store information card"
+  },
+  "storeName": "Store Name",
+  "@storeName": {
+    "description": "Store name field label"
+  },
+  "currency": "Currency",
+  "@currency": {
+    "description": "Currency field label"
+  },
+  "currencyValue": "INR (₹)",
+  "@currencyValue": {
+    "description": "Store currency"
+  },
+
+  "actionSave": "Save",
+  "@actionSave": {
+    "description": "Generic save action button"
+  },
+  "actionCancel": "Cancel",
+  "@actionCancel": {
+    "description": "Generic cancel action button"
+  },
+  "actionDelete": "Delete",
+  "@actionDelete": {
+    "description": "Generic delete action button"
+  },
+  "actionEdit": "Edit",
+  "@actionEdit": {
+    "description": "Generic edit action button"
+  },
+  "actionAdd": "Add",
+  "@actionAdd": {
+    "description": "Generic add action button"
+  },
+  "actionClose": "Close",
+  "@actionClose": {
+    "description": "Generic close action button"
+  },
+  "actionSearch": "Search",
+  "@actionSearch": {
+    "description": "Search button or field placeholder"
+  },
+  "actionClear": "Clear",
+  "@actionClear": {
+    "description": "Clear action button"
+  },
+  "actionConfirm": "Confirm",
+  "@actionConfirm": {
+    "description": "Confirm action button"
+  },
+  "actionSignOut": "Sign out",
+  "@actionSignOut": {
+    "description": "Sign out action label"
+  },
+
+  "searchSweets": "Search sweets & snacks...",
+  "@searchSweets": {
+    "description": "Hint text for sweet search bar"
+  },
+  "allCategories": "All",
+  "@allCategories": {
+    "description": "Filter pill for all categories"
+  },
+  "addToCart": "Add to Cart",
+  "@addToCart": {
+    "description": "Button to add product to cart"
+  },
+  "cartTitle": "Cart",
+  "@cartTitle": {
+    "description": "Title of the cart view or sheet"
+  },
+  "cartEmpty": "Your cart is empty",
+  "@cartEmpty": {
+    "description": "Empty cart placeholder message"
+  },
+  "cartEmptyPrompt": "Browse the shop and add fresh sweets!",
+  "@cartEmptyPrompt": {
+    "description": "Prompt when cart is empty"
+  },
+  "subtotal": "Subtotal",
+  "@subtotal": {
+    "description": "Subtotal label in cart and bill"
+  },
+  "total": "Total",
+  "@total": {
+    "description": "Total label in cart and bill"
+  },
+  "itemCount": "{count, plural, =0{No items} =1{1 item} other{{count} items}}",
+  "@itemCount": {
+    "description": "Pluralized count of items",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "pricePerUnit": "₹{price} / {unit}",
+  "@pricePerUnit": {
+    "description": "Price format per unit",
+    "placeholders": {
+      "price": {
+        "type": "String",
+        "example": "450"
+      },
+      "unit": {
+        "type": "String",
+        "example": "kg"
+      }
+    }
+  },
+  "orderNumber": "Order #{id}",
+  "@orderNumber": {
+    "description": "Order title with order ID",
+    "placeholders": {
+      "id": {
+        "type": "String",
+        "example": "1001"
+      }
+    }
+  },
+  "statusPending": "Pending",
+  "@statusPending": {
+    "description": "Order pending status"
+  },
+  "statusCompleted": "Completed",
+  "@statusCompleted": {
+    "description": "Order completed status"
+  },
+  "statusCancelled": "Cancelled",
+  "@statusCancelled": {
+    "description": "Order cancelled status"
+  }
+}

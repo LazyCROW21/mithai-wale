@@ -4,18 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/routing/router_key.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/state/app_state_providers.dart';
+import '../../../l10n/l10n.dart';
 import '../../menu/widgets/manage_categories_dialog.dart';
+import '../widgets/language_selector_card.dart';
 
 class SettingsMobileView extends ConsumerWidget {
   const SettingsMobileView({super.key});
-
-  static const _navItems = [
-    NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-    NavigationDestination(icon: Icon(Icons.store_outlined), selectedIcon: Icon(Icons.store), label: 'Shop'),
-    NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: 'Orders'),
-    NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
-    NavigationDestination(icon: Icon(Icons.settings), selectedIcon: Icon(Icons.settings), label: 'Settings'),
-  ];
 
   static const _navRoutes = [
     AppRoutes.home,
@@ -27,21 +21,37 @@ class SettingsMobileView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final themeModeAsync = ref.watch(themeModeProvider);
     final themeMode = themeModeAsync.valueOrNull ?? ThemeMode.system;
     final cs = Theme.of(context).colorScheme;
 
+    final navItems = [
+      NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home), label: l10n.navHome),
+      NavigationDestination(icon: const Icon(Icons.store_outlined), selectedIcon: const Icon(Icons.store), label: l10n.navShop),
+      NavigationDestination(icon: const Icon(Icons.receipt_long_outlined), selectedIcon: const Icon(Icons.receipt_long), label: l10n.navOrders),
+      NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: l10n.navProfile),
+      NavigationDestination(icon: const Icon(Icons.settings), selectedIcon: const Icon(Icons.settings), label: l10n.navSettings),
+    ];
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(l10n.navSettings, style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // Language Settings Card
+          Text(l10n.language, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          const LanguageSelectorCard(),
+          const SizedBox(height: 20),
+
           // Menu & Catalog Management Card
           Card(
             color: cs.primaryContainer.withAlpha(80),
-            elevation: 0,
+            elevation: 1,
+            shadowColor: Colors.black12,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -51,15 +61,17 @@ class SettingsMobileView extends ConsumerWidget {
                     children: [
                       Icon(Icons.restaurant_menu, color: cs.primary),
                       const SizedBox(width: 8),
-                      Text(
-                        'Menu & Catalog Management',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      Expanded(
+                        child: Text(
+                          l10n.menuCatalogManagement,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Add menu items, prices, units (per piece, gm, kg, litre), auto-gen IDs and manage categories.',
+                    l10n.menuCatalogDesc,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: 12),
@@ -69,14 +81,14 @@ class SettingsMobileView extends ConsumerWidget {
                         child: FilledButton.icon(
                           onPressed: () => AppNav.go(AppRoutes.menu),
                           icon: const Icon(Icons.edit_note),
-                          label: const Text('Open Menu'),
+                          label: Text(l10n.openMenu),
                         ),
                       ),
                       const SizedBox(width: 8),
                       OutlinedButton.icon(
                         onPressed: () => showManageCategoriesModal(context),
                         icon: const Icon(Icons.category_outlined),
-                        label: const Text('Categories'),
+                        label: Text(l10n.categories),
                       ),
                     ],
                   ),
@@ -87,62 +99,61 @@ class SettingsMobileView extends ConsumerWidget {
           const SizedBox(height: 20),
 
           // Theme Settings
-          Text('Appearance', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text(l10n.appearance, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Card(
-            elevation: 0,
+            elevation: 1,
+            shadowColor: Colors.black12,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: cs.outlineVariant)),
-            child: Column(
-              children: [
-                RadioListTile<ThemeMode>(
-                  title: const Text('System Default'),
-                  value: ThemeMode.system,
-                  groupValue: themeMode,
-                  onChanged: (mode) {
-                    if (mode != null) ref.read(themeModeProvider.notifier).setThemeMode(mode);
-                  },
-                ),
-                const Divider(height: 1),
-                RadioListTile<ThemeMode>(
-                  title: const Text('Light Mode'),
-                  value: ThemeMode.light,
-                  groupValue: themeMode,
-                  onChanged: (mode) {
-                    if (mode != null) ref.read(themeModeProvider.notifier).setThemeMode(mode);
-                  },
-                ),
-                const Divider(height: 1),
-                RadioListTile<ThemeMode>(
-                  title: const Text('Dark Mode'),
-                  value: ThemeMode.dark,
-                  groupValue: themeMode,
-                  onChanged: (mode) {
-                    if (mode != null) ref.read(themeModeProvider.notifier).setThemeMode(mode);
-                  },
-                ),
-              ],
+            child: RadioGroup<ThemeMode>(
+              groupValue: themeMode,
+              onChanged: (mode) {
+                if (mode != null) ref.read(themeModeProvider.notifier).setThemeMode(mode);
+              },
+              child: Column(
+                children: [
+                  RadioListTile<ThemeMode>(
+                    title: Text(l10n.themeSystem),
+                    subtitle: Text(l10n.themeSystemDesc),
+                    value: ThemeMode.system,
+                  ),
+                  const Divider(height: 1),
+                  RadioListTile<ThemeMode>(
+                    title: Text(l10n.themeLight),
+                    subtitle: Text(l10n.themeLightDesc),
+                    value: ThemeMode.light,
+                  ),
+                  const Divider(height: 1),
+                  RadioListTile<ThemeMode>(
+                    title: Text(l10n.themeDark),
+                    subtitle: Text(l10n.themeDarkDesc),
+                    value: ThemeMode.dark,
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 20),
 
           // Store Info
-          Text('Store Information', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text(l10n.storeInformation, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Card(
-            elevation: 0,
+            elevation: 1,
+            shadowColor: Colors.black12,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: cs.outlineVariant)),
-            child: const Column(
+            child: Column(
               children: [
                 ListTile(
-                  leading: Icon(Icons.storefront),
-                  title: Text('Store Name'),
-                  subtitle: Text('मिठाई वाले (Mithai Wale)'),
+                  leading: const Icon(Icons.storefront),
+                  title: Text(l10n.storeName),
+                  subtitle: Text(l10n.appName),
                 ),
-                Divider(height: 1),
+                const Divider(height: 1),
                 ListTile(
-                  leading: Icon(Icons.currency_rupee),
-                  title: Text('Currency'),
-                  subtitle: Text('INR (₹)'),
+                  leading: const Icon(Icons.currency_rupee),
+                  title: Text(l10n.currency),
+                  subtitle: Text(l10n.currencyValue),
                 ),
               ],
             ),
@@ -152,7 +163,7 @@ class SettingsMobileView extends ConsumerWidget {
       bottomNavigationBar: NavigationBar(
         selectedIndex: 4,
         onDestinationSelected: (i) => AppNav.go(_navRoutes[i]),
-        destinations: _navItems,
+        destinations: navItems,
       ),
     );
   }

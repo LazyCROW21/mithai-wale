@@ -5,6 +5,7 @@ import 'core/database/db_provider.dart';
 import 'core/di/service_locator.dart';
 import 'core/routing/app_router.dart';
 import 'core/state/app_state_providers.dart';
+import 'l10n/l10n.dart';
 
 /// App entry point.
 ///
@@ -44,9 +45,17 @@ class MithaiWaleApp extends ConsumerWidget {
     final themeAsync = ref.watch(themeModeProvider);
     final themeMode = themeAsync.valueOrNull ?? ThemeMode.system;
 
+    final localeAsync = ref.watch(localeProvider);
+    final locale = localeAsync.valueOrNull;
+
     return MaterialApp.router(
-      title: 'मिठाई वाले',
+      onGenerateTitle: (context) => context.l10n.appName,
       debugShowCheckedModeBanner: false,
+
+      // ── Localization ──────────────────────────────────────────
+      locale: locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
 
       // ── GoRouter ──────────────────────────────────────────────
       routerConfig: appRouter,

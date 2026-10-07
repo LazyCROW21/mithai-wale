@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/routing/router_key.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/state/app_state_providers.dart';
+import '../../../l10n/l10n.dart';
 import '../../menu/widgets/manage_categories_dialog.dart';
+import '../widgets/language_selector_card.dart';
 
 class SettingsTabletView extends ConsumerWidget {
   const SettingsTabletView({super.key});
@@ -19,13 +21,14 @@ class SettingsTabletView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final themeModeAsync = ref.watch(themeModeProvider);
     final themeMode = themeModeAsync.valueOrNull ?? ThemeMode.system;
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(l10n.navSettings, style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: Row(
         children: [
@@ -33,12 +36,12 @@ class SettingsTabletView extends ConsumerWidget {
             selectedIndex: 4,
             onDestinationSelected: (i) => AppNav.go(_navRoutes[i]),
             labelType: NavigationRailLabelType.all,
-            destinations: const [
-              NavigationRailDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: Text('Home')),
-              NavigationRailDestination(icon: Icon(Icons.store_outlined), selectedIcon: Icon(Icons.store), label: Text('Shop')),
-              NavigationRailDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: Text('Orders')),
-              NavigationRailDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: Text('Profile')),
-              NavigationRailDestination(icon: Icon(Icons.settings), selectedIcon: Icon(Icons.settings), label: Text('Settings')),
+            destinations: [
+              NavigationRailDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home), label: Text(l10n.navHome)),
+              NavigationRailDestination(icon: const Icon(Icons.store_outlined), selectedIcon: const Icon(Icons.store), label: Text(l10n.navShop)),
+              NavigationRailDestination(icon: const Icon(Icons.receipt_long_outlined), selectedIcon: const Icon(Icons.receipt_long), label: Text(l10n.navOrders)),
+              NavigationRailDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: Text(l10n.navProfile)),
+              NavigationRailDestination(icon: const Icon(Icons.settings), selectedIcon: const Icon(Icons.settings), label: Text(l10n.navSettings)),
             ],
           ),
           const VerticalDivider(width: 1),
@@ -46,9 +49,17 @@ class SettingsTabletView extends ConsumerWidget {
             child: ListView(
               padding: const EdgeInsets.all(24),
               children: [
+                // Language Settings Card
+                Text(l10n.language, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                const LanguageSelectorCard(),
+                const SizedBox(height: 24),
+
+                // Menu & Catalog Management Card
                 Card(
                   color: cs.primaryContainer.withAlpha(80),
-                  elevation: 0,
+                  elevation: 1,
+                  shadowColor: Colors.black12,
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Row(
@@ -58,12 +69,12 @@ class SettingsTabletView extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Menu & Catalog Management',
+                                l10n.menuCatalogManagement,
                                 style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                'Manage items, auto-generated IDs, pricing, units (per piece, gm, kg, litre) and categories.',
+                                l10n.menuCatalogDesc,
                                 style: Theme.of(context).textTheme.bodyMedium,
                               ),
                             ],
@@ -73,53 +84,53 @@ class SettingsTabletView extends ConsumerWidget {
                         OutlinedButton.icon(
                           onPressed: () => showManageCategoriesModal(context),
                           icon: const Icon(Icons.category_outlined),
-                          label: const Text('Manage Categories'),
+                          label: Text(l10n.manageCategories),
                         ),
                         const SizedBox(width: 12),
                         FilledButton.icon(
                           onPressed: () => AppNav.go(AppRoutes.menu),
                           icon: const Icon(Icons.edit_note),
-                          label: const Text('Open Menu Management'),
+                          label: Text(l10n.openMenu),
                         ),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text('Appearance', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+
+                // Appearance Settings
+                Text(l10n.appearance, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
                 Card(
-                  elevation: 0,
+                  elevation: 1,
+                  shadowColor: Colors.black12,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: cs.outlineVariant)),
-                  child: Column(
-                    children: [
-                      RadioListTile<ThemeMode>(
-                        title: const Text('System Default'),
-                        value: ThemeMode.system,
-                        groupValue: themeMode,
-                        onChanged: (mode) {
-                          if (mode != null) ref.read(themeModeProvider.notifier).setThemeMode(mode);
-                        },
-                      ),
-                      const Divider(height: 1),
-                      RadioListTile<ThemeMode>(
-                        title: const Text('Light Mode'),
-                        value: ThemeMode.light,
-                        groupValue: themeMode,
-                        onChanged: (mode) {
-                          if (mode != null) ref.read(themeModeProvider.notifier).setThemeMode(mode);
-                        },
-                      ),
-                      const Divider(height: 1),
-                      RadioListTile<ThemeMode>(
-                        title: const Text('Dark Mode'),
-                        value: ThemeMode.dark,
-                        groupValue: themeMode,
-                        onChanged: (mode) {
-                          if (mode != null) ref.read(themeModeProvider.notifier).setThemeMode(mode);
-                        },
-                      ),
-                    ],
+                  child: RadioGroup<ThemeMode>(
+                    groupValue: themeMode,
+                    onChanged: (mode) {
+                      if (mode != null) ref.read(themeModeProvider.notifier).setThemeMode(mode);
+                    },
+                    child: Column(
+                      children: [
+                        RadioListTile<ThemeMode>(
+                          title: Text(l10n.themeSystem),
+                          subtitle: Text(l10n.themeSystemDesc),
+                          value: ThemeMode.system,
+                        ),
+                        const Divider(height: 1),
+                        RadioListTile<ThemeMode>(
+                          title: Text(l10n.themeLight),
+                          subtitle: Text(l10n.themeLightDesc),
+                          value: ThemeMode.light,
+                        ),
+                        const Divider(height: 1),
+                        RadioListTile<ThemeMode>(
+                          title: Text(l10n.themeDark),
+                          subtitle: Text(l10n.themeDarkDesc),
+                          value: ThemeMode.dark,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
