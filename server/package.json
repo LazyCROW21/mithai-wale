@@ -1,0 +1,25 @@
+{
+  "name": "server",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "hono": "^4.13.17",
+    "mongodb": "^7.8.0",
+    "zod": "^4.6.7"
+  },
+  "scripts": {
+    "dev": "bun --watch index.ts",
+    "start": "bun index.ts",
+    "typecheck": "tsc --noEmit",
+    "db:up": "docker compose up -d mongo",
+    "db:down": "docker compose down",
+    "seed:admin": "bun src/scripts/seed-admin.ts"
+  }
+}

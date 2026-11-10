@@ -1,0 +1,18 @@
+:root {
+  --bg: #f5f5f7;
+  --surface: #fff;
+  --border: #ddd;
+  --accent: #c2410c;
+  font-family: system-ui, sans-serif;
+  color: #1c1c1e;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121214;
+    --surface: #1e1e22;
+    --border: #3a3a40;
+    color: #eee;
+  }
+}
+body { margin: 0; background: var(--bg); padding: 0 16px; }
