@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/routing/router_key.dart';
-import '../../../core/routing/routes.dart';
 import '../home_providers.dart';
 import 'order_highlight_card.dart';
 
@@ -127,7 +126,7 @@ class OrderHighlightSection extends ConsumerWidget {
                     ),
                     const SizedBox(height: 14),
                     FilledButton.tonalIcon(
-                      onPressed: () => AppNav.go(AppRoutes.shop),
+                      onPressed: () => AppNav.showCreateOrder(),
                       icon: const Icon(Icons.add_shopping_cart, size: 16),
                       label: const Text('Start Order in Shop'),
                     ),

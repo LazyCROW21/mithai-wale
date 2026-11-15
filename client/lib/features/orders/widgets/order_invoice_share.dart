@@ -30,7 +30,7 @@ String generateOrderInvoiceText(OrderModel order) {
   final grouped = OrderModel.groupItemsByDeliveryDate(order.items);
   int itemNum = 1;
   grouped.forEach((deliveryDate, items) {
-    buffer.writeln(' [Delivery: ${formatDate(deliveryDate)}]');
+    buffer.writeln(' [Delivery: ${formatDate(deliveryDate)} · ${items.first.status}]');
     for (final item in items) {
       final qtyStr = item.quantity % 1 == 0
           ? item.quantity.toInt().toString()

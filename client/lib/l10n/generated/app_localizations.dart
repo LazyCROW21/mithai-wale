@@ -775,6 +775,474 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Low'**
   String get inventoryLow;
+
+  /// No description provided for @syncTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud sync'**
+  String get syncTitle;
+
+  /// No description provided for @syncStatusSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'All changes synced'**
+  String get syncStatusSynced;
+
+  /// No description provided for @syncStatusSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing…'**
+  String get syncStatusSyncing;
+
+  /// No description provided for @syncStatusOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline — changes are saved on this device'**
+  String get syncStatusOffline;
+
+  /// No description provided for @syncStatusError.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync problem: {message}'**
+  String syncStatusError(String message);
+
+  /// No description provided for @syncPending.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No pending changes} =1{1 change waiting to upload} other{{count} changes waiting to upload}}'**
+  String syncPending(int count);
+
+  /// No description provided for @syncFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 change was rejected by the server} other{{count} changes were rejected by the server}}'**
+  String syncFailed(int count);
+
+  /// No description provided for @syncLastSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Last synced {time}'**
+  String syncLastSynced(String time);
+
+  /// No description provided for @syncNever.
+  ///
+  /// In en, this message translates to:
+  /// **'Not synced yet'**
+  String get syncNever;
+
+  /// No description provided for @syncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync now'**
+  String get syncNow;
+
+  /// No description provided for @syncResync.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-sync from cloud'**
+  String get syncResync;
+
+  /// No description provided for @syncResyncDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace all data on this device with a fresh copy from the cloud.'**
+  String get syncResyncDesc;
+
+  /// No description provided for @syncResyncConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-sync from cloud?'**
+  String get syncResyncConfirmTitle;
+
+  /// No description provided for @syncResyncConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'All data on this device will be replaced with the latest copy from the cloud. This needs an internet connection.'**
+  String get syncResyncConfirmBody;
+
+  /// No description provided for @syncResyncPendingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 change on this device hasn\'t been uploaded yet.} other{{count} changes on this device haven\'t been uploaded yet.}}'**
+  String syncResyncPendingBody(int count);
+
+  /// No description provided for @syncUploadThenResync.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload first, then re-sync'**
+  String get syncUploadThenResync;
+
+  /// No description provided for @syncDiscardAndResync.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard my changes'**
+  String get syncDiscardAndResync;
+
+  /// No description provided for @syncDiscardConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Your un-uploaded changes will be lost permanently. Continue?'**
+  String get syncDiscardConfirm;
+
+  /// No description provided for @syncResyncProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading… {count} records'**
+  String syncResyncProgress(int count);
+
+  /// No description provided for @syncResyncDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-sync complete'**
+  String get syncResyncDone;
+
+  /// No description provided for @syncResyncFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-sync failed. Your current data is unchanged.'**
+  String get syncResyncFailed;
+
+  /// No description provided for @syncClearFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss rejected changes'**
+  String get syncClearFailed;
+
+  /// No description provided for @syncSignOutPending.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 change hasn\'t been uploaded. Signing out now will delete it from this device.} other{{count} changes haven\'t been uploaded. Signing out now will delete them from this device.}}'**
+  String syncSignOutPending(int count);
+
+  /// No description provided for @syncSignOutAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out anyway'**
+  String get syncSignOutAnyway;
+
+  /// No description provided for @billingShop.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing shop'**
+  String get billingShop;
+
+  /// No description provided for @orderPlacedWithToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Token {token} · order placed (₹{amount})'**
+  String orderPlacedWithToken(String token, String amount);
+
+  /// No description provided for @navDashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard'**
+  String get navDashboard;
+
+  /// No description provided for @navMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get navMore;
+
+  /// No description provided for @navLedger.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger'**
+  String get navLedger;
+
+  /// No description provided for @navAudit.
+  ///
+  /// In en, this message translates to:
+  /// **'Audit log'**
+  String get navAudit;
+
+  /// No description provided for @navNewOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'New order'**
+  String get navNewOrder;
+
+  /// No description provided for @shopFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All shops'**
+  String get shopFilterAll;
+
+  /// No description provided for @shopFilterTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by shop'**
+  String get shopFilterTooltip;
+
+  /// No description provided for @auditComingSoonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Audit log is coming soon'**
+  String get auditComingSoonTitle;
+
+  /// No description provided for @auditComingSoonBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Every change made across your shops will be listed here. This will be available online only.'**
+  String get auditComingSoonBody;
+
+  /// No description provided for @moreAccountSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get moreAccountSection;
+
+  /// No description provided for @moreManageSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get moreManageSection;
+
+  /// No description provided for @orderNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New order'**
+  String get orderNewTitle;
+
+  /// No description provided for @orderShopLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Shop'**
+  String get orderShopLabel;
+
+  /// No description provided for @orderShopRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a shop'**
+  String get orderShopRequired;
+
+  /// No description provided for @orderSearchItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Search and add an item'**
+  String get orderSearchItems;
+
+  /// No description provided for @orderNoMenuItems.
+  ///
+  /// In en, this message translates to:
+  /// **'No menu items available'**
+  String get orderNoMenuItems;
+
+  /// No description provided for @orderDeliveryDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery date'**
+  String get orderDeliveryDate;
+
+  /// No description provided for @orderCustomerName.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer name'**
+  String get orderCustomerName;
+
+  /// No description provided for @orderCustomerPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number'**
+  String get orderCustomerPhone;
+
+  /// No description provided for @orderWalkInCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Walk-in customer'**
+  String get orderWalkInCustomer;
+
+  /// No description provided for @orderDiscount.
+  ///
+  /// In en, this message translates to:
+  /// **'Discount'**
+  String get orderDiscount;
+
+  /// No description provided for @orderDiscountNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get orderDiscountNone;
+
+  /// No description provided for @orderDiscountPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'%'**
+  String get orderDiscountPercent;
+
+  /// No description provided for @orderDiscountFlat.
+  ///
+  /// In en, this message translates to:
+  /// **'₹ Flat'**
+  String get orderDiscountFlat;
+
+  /// No description provided for @orderDiscountInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid discount'**
+  String get orderDiscountInvalid;
+
+  /// No description provided for @orderItemsSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No items added} =1{1 item} other{{count} items}}'**
+  String orderItemsSelected(int count);
+
+  /// No description provided for @orderAddItemsFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one item'**
+  String get orderAddItemsFirst;
+
+  /// No description provided for @orderPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Place order'**
+  String get orderPlace;
+
+  /// No description provided for @orderSetQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Set quantity'**
+  String get orderSetQuantity;
+
+  /// No description provided for @orderQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity'**
+  String get orderQuantity;
+
+  /// No description provided for @menuReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'View only'**
+  String get menuReadOnly;
+
+  /// No description provided for @statusPlaced.
+  ///
+  /// In en, this message translates to:
+  /// **'Placed'**
+  String get statusPlaced;
+
+  /// No description provided for @statusPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing'**
+  String get statusPreparing;
+
+  /// No description provided for @statusReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get statusReady;
+
+  /// No description provided for @statusDelivering.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivering'**
+  String get statusDelivering;
+
+  /// No description provided for @statusDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get statusDelivered;
+
+  /// No description provided for @statusReturned.
+  ///
+  /// In en, this message translates to:
+  /// **'Returned'**
+  String get statusReturned;
+
+  /// No description provided for @orderItemsInOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Items in order'**
+  String get orderItemsInOrder;
+
+  /// No description provided for @orderNoLinesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No items yet. Search above to add items.'**
+  String get orderNoLinesYet;
+
+  /// No description provided for @orderDeliveryOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery · {date}'**
+  String orderDeliveryOn(String date);
+
+  /// No description provided for @orderAddForAnotherDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Add for another date'**
+  String get orderAddForAnotherDate;
+
+  /// No description provided for @orderChangeDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Change date'**
+  String get orderChangeDate;
+
+  /// No description provided for @orderRemoveItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get orderRemoveItem;
+
+  /// No description provided for @orderDeliveryStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery status'**
+  String get orderDeliveryStatus;
+
+  /// No description provided for @orderOverallStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Overall status'**
+  String get orderOverallStatus;
+
+  /// No description provided for @orderStatusPerDateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Each delivery date has its own status — set it on the date below.'**
+  String get orderStatusPerDateHint;
+
+  /// No description provided for @orderMarkAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Set all dates to'**
+  String get orderMarkAll;
+
+  /// No description provided for @orderLineCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item} other{{count} items}}'**
+  String orderLineCount(int count);
+
+  /// No description provided for @orderDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate'**
+  String get orderDuplicate;
+
+  /// No description provided for @orderMergeDuplicates.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge into one row'**
+  String get orderMergeDuplicates;
+
+  /// No description provided for @orderDefaultDateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Default date for new items — change any row\'s date with its date button'**
+  String get orderDefaultDateHint;
+
+  /// No description provided for @homeItemsToBuildTodayDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Total unique items to build for today'**
+  String get homeItemsToBuildTodayDesc;
 }
 
 class _AppLocalizationsDelegate

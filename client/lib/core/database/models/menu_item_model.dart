@@ -31,10 +31,10 @@ class MenuItem {
     }
 
     return MenuItem(
-      id: map['id'] as int,
+      id: map['id'] as String,
       title: map['title'] as String,
       description: map['description'] as String?,
-      categoryId: map['categoryId'] as int?,
+      categoryId: map['categoryId'] as String?,
       price: (map['price'] as num).toDouble(),
       unit: map['unit'] as String,
       isAvailable: map['isAvailable'] as bool? ?? true,
@@ -45,10 +45,10 @@ class MenuItem {
     );
   }
 
-  final int id;
+  final String id;
   final String title;
   final String? description;
-  final int? categoryId;
+  final String? categoryId;
   final double price;
   final String unit;
   final bool isAvailable;
@@ -70,7 +70,7 @@ class MenuItem {
   }
 
   MenuItem copyWith({
-    int? id,
+    String? id,
     String? title,
     Object? description = _undefined,
     Object? categoryId = _undefined,
@@ -84,7 +84,7 @@ class MenuItem {
       id: id ?? this.id,
       title: title ?? this.title,
       description: description == _undefined ? this.description : description as String?,
-      categoryId: categoryId == _undefined ? this.categoryId : categoryId as int?,
+      categoryId: categoryId == _undefined ? this.categoryId : categoryId as String?,
       price: price ?? this.price,
       unit: unit ?? this.unit,
       isAvailable: isAvailable ?? this.isAvailable,

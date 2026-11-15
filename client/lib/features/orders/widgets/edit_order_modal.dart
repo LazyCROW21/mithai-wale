@@ -8,10 +8,11 @@ import '../../../core/database/models/payment_model.dart';
 import '../../../core/database/repositories/menu_repository.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/layout/layout_extensions.dart';
-import '../../cart/models/cart_item_model.dart';
+import '../../../l10n/l10n.dart';
 import '../../ledger/ledger_providers.dart';
 import '../../ledger/widgets/record_payment_dialog.dart';
 import '../orders_providers.dart';
+import 'order_lines_editor.dart';
 
 /// Opens the edit order experience with Order Details and Payment Details tabs:
 /// - On Mobile: Full-screen Dialog taking maximum space
@@ -61,21 +62,12 @@ class _OrderEditViewState extends ConsumerState<OrderEditView>
   late TextEditingController _phoneController;
   late TextEditingController _discountController;
 
-  late String _status;
   late List<OrderItemDetail> _items;
+
+  /// Overall status derived from the per-date statuses.
+  String get _overallStatus => OrderStatus.derive(_items.map((i) => i.status), fallback: widget.order.status);
   DiscountType? _discountType;
   String? _discountError;
-
-  static const _statusOptions = [
-    'Placed',
-    'Preparing',
-    'Ready',
-    'Delivering',
-    'Delivered',
-    'Completed',
-    'Cancelled',
-    'Returned',
-  ];
 
   @override
   void initState() {
@@ -93,9 +85,7 @@ class _OrderEditViewState extends ConsumerState<OrderEditView>
               : o.discountAmount.toString())
           : '',
     );
-    _status = o.status;
-    _items = List<OrderItemDetail>.from(o.items);
-    _sortItems();
+    _items = OrderModel.sortLines(o.items);
   }
 
   @override
@@ -180,55 +170,6 @@ class _OrderEditViewState extends ConsumerState<OrderEditView>
     return '$hour:$min $ampm';
   }
 
-
-  void _incrementItem(int index) {
-    final item = _items[index];
-    final step = (item.unit.toLowerCase() == 'kg' || item.unit.toLowerCase() == 'litre') ? 0.5 : 1.0;
-    setState(() {
-      _items[index] = item.copyWith(quantity: item.quantity + step);
-    });
-  }
-
-  void _decrementItem(int index) {
-    if (index < 0 || index >= _items.length) return;
-    final item = _items[index];
-    final step = (item.unit.toLowerCase() == 'kg' || item.unit.toLowerCase() == 'litre') ? 0.5 : 1.0;
-    final newQty = item.quantity - step;
-    setState(() {
-      if (newQty <= 0) {
-        _items.removeAt(index);
-      } else {
-        _items[index] = item.copyWith(quantity: newQty);
-      }
-    });
-  }
-
-  void _removeItem(int index) {
-    if (index < 0 || index >= _items.length) return;
-    setState(() {
-      _items.removeAt(index);
-    });
-  }
-
-  void _sortItems() {
-    _items.sort((a, b) {
-      final cmp = a.deliveryDate.compareTo(b.deliveryDate);
-      if (cmp != 0) return cmp;
-      return a.name.compareTo(b.name);
-    });
-  }
-
-  void _updateItemDeliveryDate(OrderItemDetail item, DateTime newDate) {
-    final normalized = DateTime(newDate.year, newDate.month, newDate.day);
-    if (item.isSameDeliveryDay(normalized)) return;
-    setState(() {
-      final index = _items.indexOf(item);
-      if (index >= 0) {
-        _items[index] = item.copyWith(deliveryDate: normalized);
-        _sortItems();
-      }
-    });
-  }
 
   Future<void> _showAddItemDialog() async {
     final menuRepo = sl.isRegistered<IMenuRepository>() ? sl<IMenuRepository>() : null;
@@ -335,16 +276,18 @@ class _OrderEditViewState extends ConsumerState<OrderEditView>
     );
 
     if (result != null) {
+      // Added as a new row; the editor flags same item + same day as duplicates.
       setState(() {
-        final normalized = DateTime(result.date.year, result.date.month, result.date.day);
-        _items.add(OrderItemDetail(
-          name: result.item.title,
-          quantity: 1.0,
-          unit: result.item.unit,
-          unitPrice: result.item.price,
-          deliveryDate: normalized,
-        ));
-        _sortItems();
+        _items = OrderModel.addLine(
+          _items,
+          OrderItemDetail(
+            name: result.item.title,
+            quantity: 1.0,
+            unit: result.item.unit,
+            unitPrice: result.item.price,
+            deliveryDate: dayOf(result.date),
+          ),
+        );
       });
     }
   }
@@ -365,7 +308,6 @@ class _OrderEditViewState extends ConsumerState<OrderEditView>
       customerName: _nameController.text.trim().isEmpty ? 'Customer' : _nameController.text.trim(),
       customerPhone: _phoneController.text.trim(),
       items: _items,
-      status: _status,
       discountType: _discountType,
       discountAmount: _discountType == null ? 0.0 : _discountAmount,
       totalBill: _finalTotal,
@@ -500,25 +442,31 @@ class _OrderEditViewState extends ConsumerState<OrderEditView>
               ),
               const SizedBox(height: 14),
 
-              // Status and Delivery Date in a Row
+              // Overall status and creation date in a Row
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Status Dropdown
+                  // Overall status: derived from the delivery dates; picking a
+                  // value here sets every date at once.
                   Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _statusOptions.contains(_status) ? _status : 'Placed',
-                      decoration: const InputDecoration(
-                        labelText: 'Order Status',
-                        prefixIcon: Icon(Icons.info_outline, size: 20),
-                        border: OutlineInputBorder(),
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: context.l10n.orderOverallStatus,
+                        helperText: context.l10n.orderStatusPerDateHint,
+                        helperMaxLines: 2,
+                        prefixIcon: const Icon(Icons.info_outline, size: 20),
+                        border: const OutlineInputBorder(),
                         isDense: true,
                       ),
-                      items: _statusOptions
-                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                          .toList(),
-                      onChanged: (val) {
-                        if (val != null) setState(() => _status = val);
-                      },
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: DeliveryStatusChip(
+                          status: _overallStatus,
+                          onChanged: (s) => setState(() {
+                            _items = [for (final i in _items) i.copyWith(status: s)];
+                          }),
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -575,171 +523,11 @@ class _OrderEditViewState extends ConsumerState<OrderEditView>
               ),
               const SizedBox(height: 8),
 
-              if (_items.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(24.0),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: cs.outlineVariant),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Center(child: Text('No items in this order. Tap "+ Add Item"')),
-                )
-              else
-                ...() {
-                  final uniqueDates = _items
-                      .map((i) => DateTime(i.deliveryDate.year, i.deliveryDate.month, i.deliveryDate.day))
-                      .toSet()
-                      .toList()
-                    ..sort();
-
-                  return _items.map((item) {
-                    final qtyStr = item.quantity % 1 == 0
-                        ? item.quantity.toInt().toString()
-                        : item.quantity.toString();
-                    final itemIndex = _items.indexOf(item);
-                    final dateColor = CartItem.getDeliveryDateColor(item.deliveryDate, cs, uniqueDates);
-
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      color: cs.surface,
-                      elevation: 1.5,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: dateColor, width: 2.0),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Top row: Delivery date badge + Change Date button
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: dateColor.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: dateColor.withValues(alpha: 0.3)),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.calendar_today_outlined, size: 14, color: dateColor),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Delivery: ${_formatDate(item.deliveryDate)}',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                          color: dateColor,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Spacer(),
-                                OutlinedButton.icon(
-                                  style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    visualDensity: VisualDensity.compact,
-                                    elevation: 1,
-                                    side: BorderSide(color: dateColor.withValues(alpha: 0.5)),
-                                  ),
-                                  onPressed: () async {
-                                    final picked = await showDatePicker(
-                                      context: context,
-                                      initialDate: item.deliveryDate,
-                                      firstDate: DateTime(2025),
-                                      lastDate: DateTime(2030),
-                                    );
-                                    if (picked != null) {
-                                      _updateItemDeliveryDate(item, picked);
-                                    }
-                                  },
-                                  icon: Icon(Icons.edit_calendar, size: 14, color: dateColor),
-                                  label: Text(
-                                    'Change Date',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: dateColor,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          const SizedBox(height: 10),
-
-                          // Main item row: Name, price, stepper, delete
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.name,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '₹${item.unitPrice.toStringAsFixed(2)} / ${item.unit}',
-                                      style: TextStyle(fontSize: 12, color: cs.outline),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              // Stepper
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton.filledTonal(
-                                    iconSize: 16,
-                                    visualDensity: VisualDensity.compact,
-                                    icon: const Icon(Icons.remove),
-                                    onPressed: () => _decrementItem(itemIndex),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                    child: Text(
-                                      '$qtyStr ${item.unit}',
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                    ),
-                                  ),
-                                  IconButton.filledTonal(
-                                    iconSize: 16,
-                                    visualDensity: VisualDensity.compact,
-                                    icon: const Icon(Icons.add),
-                                    onPressed: () => _incrementItem(itemIndex),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(width: 8),
-                              SizedBox(
-                                width: 70,
-                                child: Text(
-                                  '₹${item.totalPrice.toStringAsFixed(2)}',
-                                  textAlign: TextAlign.right,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: dateColor,
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.delete_outline, color: cs.error, size: 20),
-                                onPressed: () => _removeItem(itemIndex),
-                                tooltip: 'Remove Item',
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                });
-              }(),
+              OrderLinesEditor(
+                lines: _items,
+                showStatus: true,
+                onChanged: (lines) => setState(() => _items = OrderModel.sortLines(lines)),
+              ),
               const SizedBox(height: 24),
 
               // ── Discount Section ───────────────────────────────────────
@@ -1105,10 +893,15 @@ class _OrderEditViewState extends ConsumerState<OrderEditView>
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: SingleChildScrollView(
+              // Fill the card's width (scroll horizontally only below 680px);
+              // flexible columns share the extra space.
+              child: LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(minWidth: 680),
+                  constraints: BoxConstraints(
+                    minWidth: constraints.maxWidth > 680 ? constraints.maxWidth : 680,
+                  ),
                   child: DataTable(
                     dataRowMinHeight: 52,
                     dataRowMaxHeight: 58,
@@ -1116,12 +909,12 @@ class _OrderEditViewState extends ConsumerState<OrderEditView>
                       cs.surfaceContainerHighest.withValues(alpha: 0.6),
                     ),
                     columns: const [
-                      DataColumn(label: Text('Date & Time', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Credit / Debit', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Mode', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Reason / Note', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Reference', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(columnWidth: IntrinsicColumnWidth(flex: 1), label: Text('Date & Time', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(columnWidth: IntrinsicColumnWidth(flex: 1), label: Text('Credit / Debit', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(columnWidth: IntrinsicColumnWidth(flex: 1), label: Text('Mode', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(columnWidth: IntrinsicColumnWidth(flex: 1), label: Text('Reason / Note', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(columnWidth: IntrinsicColumnWidth(flex: 1), label: Text('Reference', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(columnWidth: IntrinsicColumnWidth(flex: 1), label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold))),
                     ],
                     rows: orderPayments.map((p) {
                       final isCredit = p.isCredit;
@@ -1216,6 +1009,7 @@ class _OrderEditViewState extends ConsumerState<OrderEditView>
                     }).toList(),
                   ),
                 ),
+              ),
               ),
             ),
           ),

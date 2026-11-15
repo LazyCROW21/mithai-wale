@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/database/repositories/orders_repository.dart';
 import '../../core/di/service_locator.dart';
+import '../../core/state/shop_filter.dart';
+import '../../core/sync/sync_engine.dart';
 import 'orders_state.dart';
 
 /// ViewModel managing state, search, filter, date navigation, and expandable cards for Orders.
@@ -10,11 +12,15 @@ class OrdersViewModel extends Notifier<OrdersState> {
 
   @override
   OrdersState build() {
+    // Reload when sync brings in changes from other devices (keeps filters).
+    ref.listen(syncStatusProvider.select((s) => s.dataRevision), (_, _) => loadOrders());
+    // Franchise admin switched shops: reload (keeps filters).
+    ref.listen(shopFilterProvider, (_, _) => loadOrders());
     final repo = _ordersRepo;
     if (repo != null) {
       try {
         final list = repo.getAllSync();
-        return OrdersState(allOrders: list);
+        return OrdersState(allOrders: _scoped(list));
       } catch (_) {
         return OrdersState();
       }
@@ -29,16 +35,22 @@ class OrdersViewModel extends Notifier<OrdersState> {
       state = state.copyWith(isLoading: true);
       try {
         final list = await repo.getAll();
-        state = state.copyWith(allOrders: list, isLoading: false);
+        state = state.copyWith(allOrders: _scoped(list), isLoading: false);
       } catch (_) {
         state = state.copyWith(isLoading: false);
       }
     }
   }
 
-  /// Adds a new order (e.g. placed from cart) and persists to Hive.
+  /// Only the orders of the shop selected in the global shop filter (all when none).
+  List<OrderModel> _scoped(List<OrderModel> list) {
+    final filter = ref.read(shopFilterProvider.notifier);
+    return list.where((o) => filter.matches(o.shopId)).toList();
+  }
+
+  /// Adds a new order (e.g. placed from the new-order dialog) and persists to Hive.
   Future<void> addOrder(OrderModel order) async {
-    final updated = [order, ...state.allOrders.where((o) => o.id != order.id)];
+    final updated = _scoped([order, ...state.allOrders.where((o) => o.id != order.id)]);
     state = state.copyWith(allOrders: updated);
     await _ordersRepo?.save(order);
   }
@@ -135,15 +147,20 @@ class OrdersViewModel extends Notifier<OrdersState> {
     await _ordersRepo?.save(updatedOrder);
   }
 
-  /// Updates an order's status and updates Hive DB.
-  Future<void> updateOrderStatus(String orderId, String newStatus) async {
-    final updated = state.allOrders.map((o) {
-      if (o.id == orderId) {
-        return o.copyWith(status: newStatus);
-      }
-      return o;
-    }).toList();
-    state = state.copyWith(allOrders: updated);
-    await _ordersRepo?.updateStatus(orderId, newStatus);
+  /// Sets every delivery date of an order to [newStatus].
+  Future<void> updateOrderStatus(String orderId, String newStatus) =>
+      _replace(orderId, (o) => o.withAllStatus(newStatus));
+
+  /// Sets the status of one delivery date (all items delivered on [day]);
+  /// the order's overall status is re-derived.
+  Future<void> updateDateStatus(String orderId, DateTime day, String newStatus) =>
+      _replace(orderId, (o) => o.withDateStatus(day, newStatus));
+
+  Future<void> _replace(String orderId, OrderModel Function(OrderModel) change) async {
+    final current = state.allOrders.where((o) => o.id == orderId).firstOrNull;
+    if (current == null) return;
+    final next = change(current);
+    state = state.copyWith(allOrders: [for (final o in state.allOrders) o.id == orderId ? next : o]);
+    await _ordersRepo?.save(next);
   }
 }

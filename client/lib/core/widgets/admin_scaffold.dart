@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
 import '../network/api_client.dart';
-import '../routing/router_key.dart';
-import '../routing/routes.dart';
+import 'app_shell.dart';
 
 /// Shared frame for management screens (shops, staff, inventory):
-/// app bar with back-to-home, centred width-constrained body, optional FAB.
+/// app bar (back to "More" on mobile/tablet), centred width-constrained body, optional FAB.
 class AdminScaffold extends StatelessWidget {
   const AdminScaffold({
     super.key,
@@ -27,10 +26,8 @@ class AdminScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => AppNav.go(AppRoutes.home),
-        ),
+        automaticallyImplyLeading: false,
+        leading: MoreBackButton.of(context),
         title: Text(title),
         actions: actions,
       ),

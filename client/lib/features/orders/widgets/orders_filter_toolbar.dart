@@ -89,8 +89,11 @@ class OrdersFilterToolbar extends ConsumerWidget {
             scrollDirection: Axis.horizontal,
             children: [
               ..._statusOptions.map((status) {
+                // Orders with a delivery in the selected date/range at this status.
                 final count = state.allOrders
-                    .where((o) => o.status.toLowerCase() == status.toLowerCase())
+                    .where((o) => state.matchingDays(o).any(
+                          (d) => o.statusOn(d).toLowerCase() == status.toLowerCase(),
+                        ))
                     .length;
                 final isSelected = state.selectedStatuses.any(
                   (s) => s.toLowerCase() == status.toLowerCase(),

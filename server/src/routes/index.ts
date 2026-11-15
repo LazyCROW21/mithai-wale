@@ -7,6 +7,7 @@ import { categoriesRouter, menuItemsRouter } from "./catalog";
 import { healthRouter } from "./health";
 import { inventoryListRouter, ordersListRouter, paymentsListRouter } from "./scoped-lists";
 import { shopsRouter } from "./shops";
+import { syncRouter } from "./sync";
 import { usersRouter } from "./users";
 
 export const apiRouter = new Hono<AppEnv>()
@@ -40,4 +41,7 @@ export const apiRouter = new Hono<AppEnv>()
   .route("/orders", ordersListRouter)
   .use("/payments/*", authenticate, requireUser)
   .use("/payments", authenticate, requireUser)
-  .route("/payments", paymentsListRouter);
+  .route("/payments", paymentsListRouter)
+  // offline-first sync
+  .use("/sync/*", authenticate, requireUser)
+  .route("/sync", syncRouter);

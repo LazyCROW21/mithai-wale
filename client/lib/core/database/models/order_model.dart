@@ -16,7 +16,57 @@ enum DiscountType {
   }
 }
 
+/// Order / delivery-date statuses, in lifecycle order (then the closed ones).
+abstract final class OrderStatus {
+  static const placed = 'Placed';
+  static const preparing = 'Preparing';
+  static const ready = 'Ready';
+  static const delivering = 'Delivering';
+  static const delivered = 'Delivered';
+  static const completed = 'Completed';
+  static const cancelled = 'Cancelled';
+  static const returned = 'Returned';
+
+  static const all = [placed, preparing, ready, delivering, delivered, completed, cancelled, returned];
+
+  /// Cancelled / returned (also legacy "refunded"): no longer counts as business.
+  static bool isClosed(String s) {
+    final v = s.toLowerCase().trim();
+    return v == 'cancelled' || v == 'returned' || v == 'refunded';
+  }
+
+  /// Handed over to the customer.
+  static bool isFulfilled(String s) {
+    final v = s.toLowerCase().trim();
+    return v == 'delivered' || v == 'completed';
+  }
+
+  static int _rank(String s) {
+    final i = all.indexWhere((a) => a.toLowerCase() == s.toLowerCase().trim());
+    return i < 0 ? 0 : i;
+  }
+
+  /// Overall order status from its delivery-date statuses: the least advanced
+  /// active one (an order is only "Delivered" once every date is); when every
+  /// date is closed, "Returned" if any was returned, else "Cancelled".
+  static String derive(Iterable<String> statuses, {String fallback = placed}) {
+    final list = statuses.toList();
+    if (list.isEmpty) return fallback;
+    final active = list.where((s) => !isClosed(s)).toList();
+    if (active.isEmpty) {
+      return list.any((s) => s.toLowerCase() == 'returned') ? returned : cancelled;
+    }
+    active.sort((a, b) => _rank(a).compareTo(_rank(b)));
+    return active.first;
+  }
+}
+
+/// Normalizes [d] to a calendar day (drops the time).
+DateTime dayOf(DateTime d) => DateTime(d.year, d.month, d.day);
+
 /// Single item line breakdown within an order, with its own delivery date.
+///
+/// All lines delivering on the same day share one [status] (a "delivery").
 @immutable
 class OrderItemDetail {
   const OrderItemDetail({
@@ -25,6 +75,7 @@ class OrderItemDetail {
     required this.unit,
     required this.unitPrice,
     required this.deliveryDate,
+    this.status = OrderStatus.placed,
   });
 
   final String name;
@@ -35,6 +86,13 @@ class OrderItemDetail {
   /// The scheduled delivery date for this specific line item.
   final DateTime deliveryDate;
 
+  /// Status of this line's delivery (shared by all lines on the same day).
+  final String status;
+
+  /// Lines with the same key are one line (quantities merge).
+  String get lineKey =>
+      '${name.toLowerCase().trim()}|${unit.toLowerCase().trim()}|$unitPrice|${deliveryDate.year}-${deliveryDate.month}-${deliveryDate.day}';
+
   double get totalPrice => quantity * unitPrice;
 
   Map<String, dynamic> toMap() => {
@@ -43,9 +101,14 @@ class OrderItemDetail {
         'unit': unit,
         'unitPrice': unitPrice,
         'deliveryDate': deliveryDate.toIso8601String(),
+        'status': status,
       };
 
-  factory OrderItemDetail.fromMap(Map<dynamic, dynamic> map, {DateTime? defaultDate}) {
+  factory OrderItemDetail.fromMap(
+    Map<dynamic, dynamic> map, {
+    DateTime? defaultDate,
+    String defaultStatus = OrderStatus.placed,
+  }) {
     final parsedDate = map['deliveryDate'] != null
         ? DateTime.tryParse(map['deliveryDate'] as String)
         : null;
@@ -55,6 +118,8 @@ class OrderItemDetail {
       unit: map['unit'] as String? ?? 'kg',
       unitPrice: (map['unitPrice'] as num?)?.toDouble() ?? 0.0,
       deliveryDate: parsedDate ?? defaultDate ?? DateTime.now(),
+      // Orders saved before per-date status inherit the order's status.
+      status: map['status'] as String? ?? defaultStatus,
     );
   }
 
@@ -64,6 +129,7 @@ class OrderItemDetail {
     String? unit,
     double? unitPrice,
     DateTime? deliveryDate,
+    String? status,
   }) {
     return OrderItemDetail(
       name: name ?? this.name,
@@ -71,6 +137,7 @@ class OrderItemDetail {
       unit: unit ?? this.unit,
       unitPrice: unitPrice ?? this.unitPrice,
       deliveryDate: deliveryDate ?? this.deliveryDate,
+      status: status ?? this.status,
     );
   }
 
@@ -89,6 +156,7 @@ class OrderItemDetail {
           quantity == other.quantity &&
           unit == other.unit &&
           unitPrice == other.unitPrice &&
+          status == other.status &&
           isSameDeliveryDay(other.deliveryDate);
 
   @override
@@ -97,6 +165,7 @@ class OrderItemDetail {
         quantity,
         unit,
         unitPrice,
+        status,
         deliveryDate.year,
         deliveryDate.month,
         deliveryDate.day,
@@ -118,17 +187,89 @@ class OrderModel {
     required this.status,
     this.discountType,
     this.discountAmount = 0.0,
+    this.token,
+    this.shopId,
   });
 
   final String id;
+
+  /// Shop the order belongs to (local metadata; synced separately, never in [toMap]).
+  final String? shopId;
+
+  /// Daily token shown to the customer, e.g. "A-12" (device code + daily counter).
+  final String? token;
   final String customerName;
   final String customerPhone;
   final List<OrderItemDetail> items;
   final DateTime orderDate;
   final double totalBill;
 
-  /// Order status: 'Placed', 'Preparing', 'Ready', 'Delivering', 'Delivered', 'Completed', 'Cancelled', 'Returned'
+  /// Overall status, derived from the per-date statuses of [items]
+  /// (see [OrderStatus.derive]). Stored so filters and sync keep working.
   final String status;
+
+  /// Status of the delivery on [date]; the overall [status] if nothing is
+  /// delivered that day.
+  String statusOn(DateTime date) {
+    for (final i in items) {
+      if (i.isSameDeliveryDay(date)) return i.status;
+    }
+    return status;
+  }
+
+  /// Delivery day → its status, sorted by day.
+  Map<DateTime, String> get dateStatuses {
+    final map = <DateTime, String>{};
+    for (final i in items) {
+      map.putIfAbsent(dayOf(i.deliveryDate), () => i.status);
+    }
+    return Map.fromEntries(map.entries.toList()..sort((a, b) => a.key.compareTo(b.key)));
+  }
+
+  /// Copy with every line delivering on [date] set to [newStatus].
+  OrderModel withDateStatus(DateTime date, String newStatus) => copyWith(
+        items: [for (final i in items) i.isSameDeliveryDay(date) ? i.copyWith(status: newStatus) : i],
+      );
+
+  /// Copy with every delivery set to [newStatus].
+  OrderModel withAllStatus(String newStatus) =>
+      copyWith(items: [for (final i in items) i.copyWith(status: newStatus)]);
+
+  /// Appends [line] as a new row (never merged — the same item may be listed
+  /// more than once) and adopts the status already used for that day (one
+  /// status per delivery day). Returns the list re-sorted.
+  static List<OrderItemDetail> addLine(List<OrderItemDetail> lines, OrderItemDetail line) {
+    final day = dayOf(line.deliveryDate);
+    final dayStatus = lines.where((l) => l.isSameDeliveryDay(day)).firstOrNull?.status;
+    return sortLines([...lines, line.copyWith(deliveryDate: day, status: dayStatus ?? line.status)]);
+  }
+
+  /// Merges every row sharing [lineKey] (same item on the same day) into the
+  /// first one, summing quantities.
+  static List<OrderItemDetail> mergeDuplicates(List<OrderItemDetail> lines, String lineKey) {
+    final total = lines.where((l) => l.lineKey == lineKey).fold(0.0, (sum, l) => sum + l.quantity);
+    var kept = false;
+    return [
+      for (final l in lines)
+        if (l.lineKey != lineKey)
+          l
+        else if (!kept && (kept = true))
+          l.copyWith(quantity: total),
+    ];
+  }
+
+  /// Sorted by delivery day, then item name; possible duplicates (same item,
+  /// same day) end up next to each other. Stable: equal rows keep their order.
+  static List<OrderItemDetail> sortLines(List<OrderItemDetail> lines) {
+    final indexed = lines.indexed.toList()
+      ..sort((a, b) {
+        var c = dayOf(a.$2.deliveryDate).compareTo(dayOf(b.$2.deliveryDate));
+        if (c == 0) c = a.$2.name.toLowerCase().compareTo(b.$2.name.toLowerCase());
+        if (c == 0) c = a.$2.lineKey.compareTo(b.$2.lineKey);
+        return c != 0 ? c : a.$1.compareTo(b.$1);
+      });
+    return [for (final e in indexed) e.$2];
+  }
 
   /// Discount type: percentage or flat
   final DiscountType? discountType;
@@ -261,6 +402,10 @@ class OrderModel {
         'status': status,
         'discountType': discountType?.name,
         'discountAmount': discountAmount,
+        'token': token,
+        'tokenDate': token == null
+            ? null
+            : '${orderDate.year.toString().padLeft(4, '0')}-${orderDate.month.toString().padLeft(2, '0')}-${orderDate.day.toString().padLeft(2, '0')}',
       };
 
   factory OrderModel.fromMap(Map<dynamic, dynamic> map) {
@@ -274,6 +419,7 @@ class OrderModel {
             ?.map((e) => OrderItemDetail.fromMap(
                   e as Map<dynamic, dynamic>,
                   defaultDate: legacyDeliveryDate ?? DateTime.now(),
+                  defaultStatus: map['status'] as String? ?? OrderStatus.placed,
                 ))
             .toList() ??
         const [];
@@ -292,6 +438,8 @@ class OrderModel {
       status: map['status'] as String? ?? 'Placed',
       discountType: DiscountType.fromString(rawDiscountType),
       discountAmount: discountAmount,
+      token: map['token'] as String?,
+      shopId: map['shopId'] as String?,
     );
   }
 
@@ -306,6 +454,8 @@ class OrderModel {
     Object? discountType = _undefined,
     double? discountAmount,
     DateTime? deliveryDate, // Accepted for backward-compat API calls
+    String? token,
+    String? shopId,
   }) {
     final newItems = items ?? this.items;
     final newDiscountType = discountType == _undefined
@@ -331,9 +481,15 @@ class OrderModel {
       items: newItems,
       orderDate: orderDate ?? this.orderDate,
       totalBill: totalBill ?? calcBill,
-      status: status ?? this.status,
+      // Changing the lines re-derives the overall status from the per-date ones.
+      status: status ??
+          (items != null
+              ? OrderStatus.derive(newItems.map((i) => i.status), fallback: this.status)
+              : this.status),
       discountType: newDiscountType,
       discountAmount: newDiscountAmount,
+      token: token ?? this.token,
+      shopId: shopId ?? this.shopId,
     );
   }
 
@@ -350,7 +506,8 @@ class OrderModel {
           totalBill == other.totalBill &&
           status == other.status &&
           discountType == other.discountType &&
-          discountAmount == other.discountAmount;
+          discountAmount == other.discountAmount &&
+          token == other.token;
 
   @override
   int get hashCode =>

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/routing/router_key.dart';
-import '../../../core/routing/routes.dart';
+import '../../../core/widgets/app_shell.dart';
 import '../profile_providers.dart';
 
 class ProfileTabletView extends ConsumerStatefulWidget {
@@ -18,15 +17,6 @@ class _ProfileTabletViewState extends ConsumerState<ProfileTabletView> {
   late TextEditingController _phoneCtrl;
   late TextEditingController _shopNameCtrl;
   late TextEditingController _shopAddressCtrl;
-
-  static const _navItems = [
-    (icon: Icons.home_outlined, selectedIcon: Icons.home, label: 'Home', route: AppRoutes.home),
-    (icon: Icons.store_outlined, selectedIcon: Icons.store, label: 'Shop', route: AppRoutes.shop),
-    (icon: Icons.restaurant_menu_outlined, selectedIcon: Icons.restaurant_menu, label: 'Menu', route: AppRoutes.menu),
-    (icon: Icons.receipt_long_outlined, selectedIcon: Icons.receipt_long, label: 'Orders', route: AppRoutes.orders),
-    (icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Profile', route: AppRoutes.profile),
-    (icon: Icons.settings_outlined, selectedIcon: Icons.settings, label: 'Settings', route: AppRoutes.settings),
-  ];
 
   @override
   void initState() {
@@ -90,23 +80,6 @@ class _ProfileTabletViewState extends ConsumerState<ProfileTabletView> {
     return Scaffold(
       body: Row(
         children: [
-          // Navigation Rail
-          NavigationRail(
-            selectedIndex: 4,
-            onDestinationSelected: (i) => AppNav.go(_navItems[i].route),
-            labelType: NavigationRailLabelType.selected,
-            destinations: _navItems
-                .map(
-                  (item) => NavigationRailDestination(
-                    icon: Icon(item.icon),
-                    selectedIcon: Icon(item.selectedIcon),
-                    label: Text(item.label),
-                  ),
-                )
-                .toList(),
-          ),
-          const VerticalDivider(width: 1),
-
           // Main Body
           Expanded(
             child: Column(
@@ -121,6 +94,8 @@ class _ProfileTabletViewState extends ConsumerState<ProfileTabletView> {
                   ),
                   child: Row(
                     children: [
+                      const MoreBackButton(),
+                      const SizedBox(width: 8),
                       Text(
                         'Profile Settings',
                         style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),

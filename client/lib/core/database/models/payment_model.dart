@@ -29,7 +29,11 @@ class PaymentModel {
     this.note = '',
     this.customerName = '',
     this.referenceNumber,
+    this.shopId,
   });
+
+  /// Shop the entry belongs to (local metadata; synced separately, never in [toMap]).
+  final String? shopId;
 
   /// Unique payment identifier, e.g. "PAY-1729381234"
   final String id;
@@ -88,6 +92,7 @@ class PaymentModel {
       note: map['note'] as String? ?? '',
       customerName: map['customerName'] as String? ?? '',
       referenceNumber: map['referenceNumber'] as String?,
+      shopId: map['shopId'] as String?,
       createdAt: map['createdAt'] != null
           ? DateTime.tryParse(map['createdAt'] as String) ?? DateTime.now()
           : DateTime.now(),
@@ -104,6 +109,7 @@ class PaymentModel {
     String? customerName,
     String? referenceNumber,
     DateTime? createdAt,
+    String? shopId,
   }) {
     return PaymentModel(
       id: id ?? this.id,
@@ -115,6 +121,7 @@ class PaymentModel {
       customerName: customerName ?? this.customerName,
       referenceNumber: referenceNumber ?? this.referenceNumber,
       createdAt: createdAt ?? this.createdAt,
+      shopId: shopId ?? this.shopId,
     );
   }
 

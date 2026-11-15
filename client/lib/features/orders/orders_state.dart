@@ -46,6 +46,21 @@ class OrdersState {
   static bool isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
+  /// Delivery days of [order] inside the selected date/range (the order date
+  /// when it has no items).
+  List<DateTime> matchingDays(OrderModel order) {
+    final start = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+    final end = selectedEndDate == null
+        ? start
+        : DateTime(selectedEndDate!.year, selectedEndDate!.month, selectedEndDate!.day);
+    final minD = start.isBefore(end) ? start : end;
+    final maxD = start.isBefore(end) ? end : start;
+    final days = order.items.isNotEmpty
+        ? order.dateStatuses.keys
+        : [DateTime(order.orderDate.year, order.orderDate.month, order.orderDate.day)];
+    return days.where((d) => !d.isBefore(minD) && !d.isAfter(maxD)).toList();
+  }
+
   List<OrderModel> get filteredOrders {
     return allOrders.where((order) {
       // 1. Search filter: search by customer name OR order item name OR order id
@@ -59,36 +74,21 @@ class OrdersState {
         }
       }
 
-      // 2. Status filter: multi-select matching
+      // 2 + 3. Date and status: each delivery date has its own status, so an
+      // order matches when one of its delivery dates inside the selected
+      // date/range has a selected status.
       if (selectedStatuses.isEmpty) {
         return false;
       }
-      final matchesStatus = selectedStatuses.any(
-        (s) => s.toLowerCase() == order.status.toLowerCase(),
+      final days = matchingDays(order);
+      if (days.isEmpty) {
+        return false;
+      }
+      final matchesStatus = days.any(
+        (d) => selectedStatuses.any((s) => s.toLowerCase() == order.statusOn(d).toLowerCase()),
       );
       if (!matchesStatus) {
         return false;
-      }
-
-      // 3. Date filter: filter by item delivery dates (match if ANY item delivers on the date/range)
-      final start = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
-      final itemDates = order.items.isNotEmpty
-          ? order.items.map((i) => DateTime(i.deliveryDate.year, i.deliveryDate.month, i.deliveryDate.day)).toList()
-          : [DateTime(order.orderDate.year, order.orderDate.month, order.orderDate.day)];
-
-      if (selectedEndDate == null) {
-        final hasMatchingDate = itemDates.any((d) => isSameDay(d, start));
-        if (!hasMatchingDate) {
-          return false;
-        }
-      } else {
-        final end = DateTime(selectedEndDate!.year, selectedEndDate!.month, selectedEndDate!.day);
-        final minD = start.isBefore(end) ? start : end;
-        final maxD = start.isBefore(end) ? end : start;
-        final hasMatchingDate = itemDates.any((d) => !d.isBefore(minD) && !d.isAfter(maxD));
-        if (!hasMatchingDate) {
-          return false;
-        }
       }
 
       return true;

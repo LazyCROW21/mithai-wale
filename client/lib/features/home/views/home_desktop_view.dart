@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/state/shop_filter.dart';
 import '../../../core/widgets/account_menu_button.dart';
 import '../../../core/routing/router_key.dart';
 import '../../../core/routing/routes.dart';
+import '../../../l10n/l10n.dart';
 import '../home_providers.dart';
 import '../widgets/home_kpi_card.dart';
 import '../widgets/menu_items_to_build_card.dart';
@@ -11,15 +13,6 @@ import '../widgets/order_highlight_section.dart';
 
 class HomeDesktopView extends ConsumerWidget {
   const HomeDesktopView({super.key});
-
-  static const _navItems = [
-    (icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard, label: 'Home', route: AppRoutes.home),
-    (icon: Icons.storefront_outlined, selectedIcon: Icons.storefront, label: 'Shop', route: AppRoutes.shop),
-    (icon: Icons.restaurant_menu_outlined, selectedIcon: Icons.restaurant_menu, label: 'Menu', route: AppRoutes.menu),
-    (icon: Icons.receipt_long_outlined, selectedIcon: Icons.receipt_long, label: 'Orders', route: AppRoutes.orders),
-    (icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Profile', route: AppRoutes.profile),
-    (icon: Icons.settings_outlined, selectedIcon: Icons.settings, label: 'Settings', route: AppRoutes.settings),
-  ];
 
   static String _formatCurrentDate() {
     final now = DateTime.now();
@@ -36,42 +29,6 @@ class HomeDesktopView extends ConsumerWidget {
     return Scaffold(
       body: Row(
         children: [
-          // Left Navigation Drawer
-          NavigationDrawer(
-            selectedIndex: 0, // Home Dashboard index
-            onDestinationSelected: (i) => AppNav.go(_navItems[i].route),
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(28, 24, 16, 10),
-                child: Text(
-                  'मिठाई वाले',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: cs.primary,
-                  ),
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 28, vertical: 4),
-                child: Text('DASHBOARD', style: TextStyle(fontSize: 11, letterSpacing: 1.4)),
-              ),
-              ..._navItems.map(
-                (item) => NavigationDrawerDestination(
-                  icon: Icon(item.icon),
-                  selectedIcon: Icon(item.selectedIcon),
-                  label: Text(item.label),
-                ),
-              ),
-              const Divider(indent: 28, endIndent: 28),
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 28),
-                leading: const Icon(Icons.logout_outlined),
-                title: const Text('Sign out'),
-                onTap: () => AppNav.push(AppRoutes.confirmLogout),
-              ),
-            ],
-          ),
-          const VerticalDivider(width: 1),
 
           // Main Content Area
           Expanded(
@@ -98,6 +55,7 @@ class HomeDesktopView extends ConsumerWidget {
                         backgroundColor: cs.surfaceContainerHighest,
                       ),
                       const Spacer(),
+                      const ShopFilterButton(),
                       const AccountMenuButton(),
                       IconButton(
                         icon: const Icon(Icons.refresh),
@@ -106,7 +64,7 @@ class HomeDesktopView extends ConsumerWidget {
                       ),
                       const SizedBox(width: 8),
                       FilledButton.icon(
-                        onPressed: () => AppNav.go(AppRoutes.shop),
+                        onPressed: () => AppNav.showCreateOrder(),
                         icon: const Icon(Icons.add_shopping_cart),
                         label: const Text('Start New Order'),
                       ),
@@ -153,8 +111,9 @@ class HomeDesktopView extends ConsumerWidget {
                           Expanded(
                             child: HomeKpiCard(
                               title: 'Menu Items to Build',
-                              value: '${state.menuItemsToBuild.length}',
-                              subtitle: 'Aggregated from all orders',
+                              // Today's deliveries only (the card below lists the next 7 days).
+ value: '${state.todayItemsToBuild.length}',
+                              subtitle: context.l10n.homeItemsToBuildTodayDesc,
                               icon: Icons.soup_kitchen_outlined,
                               backgroundColor: cs.secondaryContainer,
                               foregroundColor: cs.onSecondaryContainer,

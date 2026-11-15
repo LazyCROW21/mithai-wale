@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/state/shop_filter.dart';
 import '../../../core/widgets/account_menu_button.dart';
 import '../../../core/routing/router_key.dart';
 import '../../../core/routing/routes.dart';
+import '../../../l10n/l10n.dart';
 import '../home_providers.dart';
 import '../widgets/home_kpi_card.dart';
 import '../widgets/menu_items_to_build_card.dart';
@@ -11,14 +13,6 @@ import '../widgets/order_highlight_section.dart';
 
 class HomeTabletView extends ConsumerWidget {
   const HomeTabletView({super.key});
-
-  static const _navRoutes = [
-    AppRoutes.home,
-    AppRoutes.shop,
-    AppRoutes.orders,
-    AppRoutes.profile,
-    AppRoutes.settings,
-  ];
 
   static String _formatCurrentDate() {
     final now = DateTime.now();
@@ -59,55 +53,18 @@ class HomeTabletView extends ConsumerWidget {
           ],
         ),
         actions: [
+          const ShopFilterButton(),
           const AccountMenuButton(),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh Data',
             onPressed: () => ref.read(homeViewModelProvider.notifier).refreshDashboard(),
           ),
-          FilledButton.icon(
-            onPressed: () => AppNav.go(AppRoutes.shop),
-            icon: const Icon(Icons.add_shopping_cart),
-            label: const Text('Start Order'),
-          ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
         ],
       ),
       body: Row(
         children: [
-          NavigationRail(
-            selectedIndex: 0, // Home
-            onDestinationSelected: (i) => AppNav.go(_navRoutes[i]),
-            labelType: NavigationRailLabelType.all,
-            destinations: const [
-              NavigationRailDestination(
-                icon: Icon(Icons.dashboard_outlined),
-                selectedIcon: Icon(Icons.dashboard),
-                label: Text('Home'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.storefront_outlined),
-                selectedIcon: Icon(Icons.storefront),
-                label: Text('Shop'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.receipt_long_outlined),
-                selectedIcon: Icon(Icons.receipt_long),
-                label: Text('Orders'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.person_outline),
-                selectedIcon: Icon(Icons.person),
-                label: Text('Profile'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.settings_outlined),
-                selectedIcon: Icon(Icons.settings),
-                label: Text('Settings'),
-              ),
-            ],
-          ),
-          const VerticalDivider(width: 1),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
@@ -142,8 +99,9 @@ class HomeTabletView extends ConsumerWidget {
                       Expanded(
                         child: HomeKpiCard(
                           title: 'Items to Build',
-                          value: '${state.menuItemsToBuild.length}',
-                          subtitle: 'From all orders',
+                          // Today's deliveries only (the card below lists the next 7 days).
+ value: '${state.todayItemsToBuild.length}',
+                          subtitle: context.l10n.homeItemsToBuildTodayDesc,
                           icon: Icons.soup_kitchen_outlined,
                           backgroundColor: cs.secondaryContainer,
                           foregroundColor: cs.onSecondaryContainer,
@@ -173,11 +131,6 @@ class HomeTabletView extends ConsumerWidget {
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => AppNav.go(AppRoutes.shop),
-        icon: const Icon(Icons.add_shopping_cart),
-        label: const Text('Start Order'),
       ),
     );
   }

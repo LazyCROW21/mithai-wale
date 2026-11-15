@@ -70,6 +70,7 @@ class AuthSession {
     required this.name,
     required this.username,
     required this.role,
+    required this.tenantId,
     required this.tenantName,
     required this.permissions,
     required this.shops,
@@ -79,6 +80,7 @@ class AuthSession {
   final String name;
   final String username;
   final AppRole role;
+  final String tenantId;
   final String tenantName;
   final Set<Permission> permissions;
 
@@ -96,6 +98,9 @@ class AuthSession {
   /// The fixed shop for store-scoped users (their first assigned shop).
   ShopRef? get ownShop => isStoreScoped && shops.isNotEmpty ? shops.first : null;
 
+  /// Key identifying whose data is stored locally.
+  String get ownerKey => '$tenantId:$userId';
+
   factory AuthSession.fromJson(Map<String, dynamic> j) {
     final user = j['user'] as Map<String, dynamic>;
     return AuthSession(
@@ -103,6 +108,7 @@ class AuthSession {
       name: user['name'] as String,
       username: user['username'] as String,
       role: AppRole.parse(user['role'] as String),
+      tenantId: (j['tenant'] as Map<String, dynamic>)['id'] as String,
       tenantName: (j['tenant'] as Map<String, dynamic>)['name'] as String,
       permissions: {
         for (final p in (j['permissions'] as List).cast<String>())

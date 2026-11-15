@@ -5,6 +5,7 @@ import '../../../core/database/models/order_model.dart';
 import '../../ledger/ledger_providers.dart';
 import 'edit_order_modal.dart';
 import 'order_invoice_share.dart';
+import 'order_lines_editor.dart';
 
 /// A table-like long row card for displaying an order with basic info,
 /// payment collection status, and an expandable breakdown view.
@@ -14,13 +15,22 @@ class OrderCard extends ConsumerWidget {
     required this.order,
     required this.isExpanded,
     required this.onToggleExpand,
-    this.onStatusChanged,
+    this.onDateStatusChanged,
+    this.focusDate,
   });
 
   final OrderModel order;
   final bool isExpanded;
   final VoidCallback onToggleExpand;
-  final ValueChanged<String>? onStatusChanged;
+
+  /// Changes the status of one delivery date (all items on that day).
+  final void Function(DateTime day, String status)? onDateStatusChanged;
+
+  /// Day the list is filtered to: the header badge shows that delivery's
+  /// status instead of the order's overall one.
+  final DateTime? focusDate;
+
+  String get _shownStatus => focusDate == null ? order.status : order.statusOn(focusDate!);
 
   String _formatDate(DateTime date) {
     final months = [
@@ -127,7 +137,7 @@ class OrderCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final statusColor = _getStatusColor(context, order.status);
+    final statusColor = _getStatusColor(context, _shownStatus);
 
     final orderPayments = ref.watch(orderPaymentsProvider(order.id));
     final creditTotal = orderPayments
@@ -332,6 +342,15 @@ class OrderCard extends ConsumerWidget {
                                         color: cs.onSurfaceVariant,
                                         fontWeight: FontWeight.w500,
                                       ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    // Each delivery date has its own status.
+                                    DeliveryStatusChip(
+                                      dense: true,
+                                      status: group.value.first.status,
+                                      onChanged: onDateStatusChanged == null
+                                          ? null
+                                          : (st) => onDateStatusChanged!(group.key, st),
                                     ),
                                   ],
                                 ),
@@ -799,7 +818,7 @@ class OrderCard extends ConsumerWidget {
             border: Border.all(color: statusColor.withValues(alpha: 0.4)),
           ),
           child: Text(
-            order.status,
+            _shownStatus,
             style: TextStyle(
               color: statusColor,
               fontWeight: FontWeight.bold,
@@ -885,7 +904,7 @@ class OrderCard extends ConsumerWidget {
                 border: Border.all(color: statusColor.withValues(alpha: 0.4)),
               ),
               child: Text(
-                order.status,
+                _shownStatus,
                 style: TextStyle(
                   color: statusColor,
                   fontWeight: FontWeight.bold,

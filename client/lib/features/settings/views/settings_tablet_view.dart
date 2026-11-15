@@ -1,50 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/app_shell.dart';
+import '../../../core/auth/auth_models.dart';
+import '../../../core/auth/auth_notifier.dart';
 import '../../../core/routing/router_key.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/state/app_state_providers.dart';
 import '../../../l10n/l10n.dart';
 import '../../menu/widgets/manage_categories_dialog.dart';
 import '../widgets/language_selector_card.dart';
+import '../widgets/sync_card.dart';
 
 class SettingsTabletView extends ConsumerWidget {
   const SettingsTabletView({super.key});
 
-  static const _navRoutes = [
-    AppRoutes.home,
-    AppRoutes.shop,
-    AppRoutes.orders,
-    AppRoutes.profile,
-    AppRoutes.settings,
-  ];
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final canEditCatalog = ref.watch(sessionProvider).role != AppRole.employee;
     final themeModeAsync = ref.watch(themeModeProvider);
     final themeMode = themeModeAsync.valueOrNull ?? ThemeMode.system;
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
+        leading: MoreBackButton.of(context),
         title: Text(l10n.navSettings, style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: Row(
         children: [
-          NavigationRail(
-            selectedIndex: 4,
-            onDestinationSelected: (i) => AppNav.go(_navRoutes[i]),
-            labelType: NavigationRailLabelType.all,
-            destinations: [
-              NavigationRailDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home), label: Text(l10n.navHome)),
-              NavigationRailDestination(icon: const Icon(Icons.store_outlined), selectedIcon: const Icon(Icons.store), label: Text(l10n.navShop)),
-              NavigationRailDestination(icon: const Icon(Icons.receipt_long_outlined), selectedIcon: const Icon(Icons.receipt_long), label: Text(l10n.navOrders)),
-              NavigationRailDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: Text(l10n.navProfile)),
-              NavigationRailDestination(icon: const Icon(Icons.settings), selectedIcon: const Icon(Icons.settings), label: Text(l10n.navSettings)),
-            ],
-          ),
-          const VerticalDivider(width: 1),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(24),
@@ -54,8 +39,12 @@ class SettingsTabletView extends ConsumerWidget {
                 const SizedBox(height: 12),
                 const LanguageSelectorCard(),
                 const SizedBox(height: 24),
+                const SyncCard(),
+                const SizedBox(height: 24),
 
                 // Menu & Catalog Management Card
+                // Employees can view the menu but not manage the catalog.
+                if (canEditCatalog)
                 Card(
                   color: cs.primaryContainer.withAlpha(80),
                   elevation: 1,

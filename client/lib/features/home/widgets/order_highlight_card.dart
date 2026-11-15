@@ -71,7 +71,9 @@ class OrderHighlightCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final statusColor = _getStatusColor(order.status);
+    // Dashboard is about today: show today's delivery status (status is per date).
+    final todayStatus = order.statusOn(DateTime.now());
+    final statusColor = _getStatusColor(todayStatus);
 
     // Watch payments for this specific order
     final payments = ref.watch(orderPaymentsProvider(order.id));
@@ -216,7 +218,7 @@ class OrderHighlightCard extends ConsumerWidget {
                           border: Border.all(color: statusColor.withAlpha(80)),
                         ),
                         child: Text(
-                          order.status,
+                          todayStatus,
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,

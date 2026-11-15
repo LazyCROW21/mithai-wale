@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/routing/router_key.dart';
-import '../../../core/routing/routes.dart';
+import '../../../core/widgets/app_shell.dart';
+import '../../../core/state/shop_filter.dart';
 import '../ledger_providers.dart';
 import '../widgets/ledger_filter_toolbar.dart';
 import '../widgets/ledger_metric_cards.dart';
@@ -10,14 +10,6 @@ import '../widgets/payment_record_card.dart';
 
 class LedgerMobileView extends ConsumerWidget {
   const LedgerMobileView({super.key});
-
-  static const _navItems = [
-    (icon: Icons.home_outlined, selectedIcon: Icons.home, label: 'Home', route: AppRoutes.home),
-    (icon: Icons.store_outlined, selectedIcon: Icons.store, label: 'Shop', route: AppRoutes.shop),
-    (icon: Icons.receipt_long_outlined, selectedIcon: Icons.receipt_long, label: 'Orders', route: AppRoutes.orders),
-    (icon: Icons.account_balance_wallet_outlined, selectedIcon: Icons.account_balance_wallet, label: 'Ledger', route: AppRoutes.ledger),
-    (icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Profile', route: AppRoutes.profile),
-  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -29,7 +21,9 @@ class LedgerMobileView extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: MoreBackButton.of(context),
         title: const Text('Payment Ledger', style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: const [ShopFilterButton(), SizedBox(width: 8)],
       ),
       body: RefreshIndicator(
         onRefresh: () => vm.loadPayments(),
@@ -78,19 +72,6 @@ class LedgerMobileView extends ConsumerWidget {
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
           ],
         ),
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 3, // Ledger
-        onDestinationSelected: (i) => AppNav.go(_navItems[i].route),
-        destinations: _navItems
-            .map(
-              (item) => NavigationDestination(
-                icon: Icon(item.icon),
-                selectedIcon: Icon(item.selectedIcon),
-                label: item.label,
-              ),
-            )
-            .toList(),
       ),
     );
   }

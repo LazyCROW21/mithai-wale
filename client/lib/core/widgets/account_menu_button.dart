@@ -2,41 +2,61 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/l10n.dart';
-import '../auth/auth_models.dart';
 import '../auth/auth_notifier.dart';
 import '../routing/router_key.dart';
 import '../routing/routes.dart';
+import '../sync/sync_engine.dart';
 
-/// Who is signed in, the management screens their role allows
-/// (shops / staff / inventory) and sign out.
+/// Who is signed in, sync status and sign out.
 ///
-/// Entries are driven by the session permissions the server returned, so a store
-/// owner never sees staff or shop management.
+/// Screen navigation lives in the app shell (desktop side bar / mobile "More");
+/// the shop each record belongs to is picked where the record is created.
 class AccountMenuButton extends ConsumerWidget {
   const AccountMenuButton({super.key});
 
   static const _signOut = '__sign_out__';
+  static const _syncNow = '__sync_now__';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(authProvider).session;
     if (session == null) return const SizedBox.shrink();
     final l10n = context.l10n;
+    final cs = Theme.of(context).colorScheme;
+    final sync = ref.watch(syncStatusProvider);
 
-    final entries = <(Permission, IconData, String, String)>[
-      (Permission.shops, Icons.storefront_outlined, l10n.navShops, AppRoutes.shops),
-      (Permission.staff, Icons.badge_outlined, l10n.navStaff, AppRoutes.staff),
-      (Permission.inventory, Icons.inventory_2_outlined, l10n.navInventory, AppRoutes.inventory),
-    ].where((e) => session.can(e.$1)).toList();
+    final syncIcon = switch (sync.phase) {
+      SyncPhase.syncing || SyncPhase.resyncing => Icons.sync,
+      SyncPhase.offline => Icons.cloud_off_outlined,
+      SyncPhase.error => Icons.error_outline,
+      SyncPhase.idle =>
+        sync.pending > 0
+            ? Icons.cloud_upload_outlined
+            : Icons.cloud_done_outlined,
+    };
+    final syncLabel = switch (sync.phase) {
+      SyncPhase.syncing || SyncPhase.resyncing => l10n.syncStatusSyncing,
+      SyncPhase.offline => l10n.syncStatusOffline,
+      SyncPhase.error => l10n.syncStatusError(sync.message ?? ''),
+      SyncPhase.idle =>
+        sync.pending > 0
+            ? l10n.syncPending(sync.pending)
+            : l10n.syncStatusSynced,
+    };
 
     return PopupMenuButton<String>(
-      icon: const Icon(Icons.account_circle_outlined),
       tooltip: l10n.navManage,
-      onSelected: (route) {
-        if (route == _signOut) {
+      icon: Badge(
+        isLabelVisible: sync.pending > 0 || sync.failed > 0,
+        backgroundColor: sync.failed > 0 ? cs.error : cs.tertiary,
+        label: Text('${sync.pending + sync.failed}'),
+        child: const Icon(Icons.account_circle_outlined),
+      ),
+      onSelected: (value) async {
+        if (value == _signOut) {
           AppNav.push(AppRoutes.confirmLogout);
-        } else {
-          AppNav.go(route);
+        } else if (value == _syncNow) {
+          syncEngine.syncNow();
         }
       },
       itemBuilder: (_) => [
@@ -45,20 +65,23 @@ class AccountMenuButton extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(session.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-              // Store-scoped users see their role only; the franchise name/shop
-              // list is not repeated for them.
+              Text(
+                session.name,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               Text(session.role.label(l10n)),
             ],
           ),
         ),
-        const PopupMenuDivider(),
-        for (final e in entries)
-          PopupMenuItem<String>(
-            value: e.$4,
-            child: ListTile(leading: Icon(e.$2), title: Text(e.$3), dense: true),
+        PopupMenuItem<String>(
+          value: _syncNow,
+          child: ListTile(
+            leading: Icon(syncIcon),
+            title: Text(syncLabel),
+            dense: true,
           ),
-        if (entries.isNotEmpty) const PopupMenuDivider(),
+        ),
+        const PopupMenuDivider(),
         PopupMenuItem<String>(
           value: _signOut,
           child: ListTile(

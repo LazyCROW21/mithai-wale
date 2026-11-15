@@ -9,10 +9,10 @@
 /// or notification handlers:
 ///
 /// ```dart
-/// AppNav.go(AppRoutes.shop);
-/// AppNav.push(AppRoutes.productDetail, params: {'id': '42'});
+/// AppNav.go(AppRoutes.orders);
+/// AppNav.showProductDetail('42');
+/// AppNav.showCreateOrder();
 /// AppNav.pop();
-/// AppNav.showBottomSheet(const AddToCartSheet());
 /// ```
 library;
 
@@ -67,9 +67,8 @@ abstract final class AppNav {
   static Future<void> showProductDetail(String productId) =>
       push(AppRoutes.productDetailPath(productId));
 
-  /// Opens the add-to-cart bottom-sheet route.
-  static Future<void> showAddToCart({Object? extra}) =>
-      push(AppRoutes.addToCart, extra: extra);
+  /// Opens the new-order dialog route.
+  static Future<void> showCreateOrder() => push(AppRoutes.createOrder);
 
   // ── Low-level access ──────────────────────────────────────────────────────
 

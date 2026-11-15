@@ -38,7 +38,7 @@ export function crudRouter<T extends TenantDoc>(opts: CrudOptions) {
       return c.json(doc);
     })
     .post("/", write, async (c) => {
-      const body = (await parseBody(c, opts.createSchema)) as Omit<T, "_id" | "tenantId" | "createdAt">;
+      const body = (await parseBody(c, opts.createSchema)) as Parameters<TenantRepo<T>["create"]>[0];
       return c.json(await repoOf(c).create(body), 201);
     })
     .patch("/:id", write, async (c) => {

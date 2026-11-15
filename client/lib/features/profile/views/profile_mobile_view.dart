@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/routing/router_key.dart';
-import '../../../core/routing/routes.dart';
+import '../../../core/widgets/app_shell.dart';
 import '../profile_providers.dart';
 
 class ProfileMobileView extends ConsumerStatefulWidget {
@@ -18,14 +17,6 @@ class _ProfileMobileViewState extends ConsumerState<ProfileMobileView> {
   late TextEditingController _phoneCtrl;
   late TextEditingController _shopNameCtrl;
   late TextEditingController _shopAddressCtrl;
-
-  static const _navItems = [
-    (icon: Icons.home_outlined, selectedIcon: Icons.home, label: 'Home', route: AppRoutes.home),
-    (icon: Icons.store_outlined, selectedIcon: Icons.store, label: 'Shop', route: AppRoutes.shop),
-    (icon: Icons.restaurant_menu_outlined, selectedIcon: Icons.restaurant_menu, label: 'Menu', route: AppRoutes.menu),
-    (icon: Icons.receipt_long_outlined, selectedIcon: Icons.receipt_long, label: 'Orders', route: AppRoutes.orders),
-    (icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Profile', route: AppRoutes.profile),
-  ];
 
   @override
   void initState() {
@@ -88,6 +79,7 @@ class _ProfileMobileViewState extends ConsumerState<ProfileMobileView> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: MoreBackButton.of(context),
         title: const Text('Profile Settings'),
         actions: [
           IconButton(
@@ -256,19 +248,6 @@ class _ProfileMobileViewState extends ConsumerState<ProfileMobileView> {
                 ],
               ),
             ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 4,
-        onDestinationSelected: (i) => AppNav.go(_navItems[i].route),
-        destinations: _navItems
-            .map(
-              (item) => NavigationDestination(
-                icon: Icon(item.icon),
-                selectedIcon: Icon(item.selectedIcon),
-                label: item.label,
-              ),
-            )
-            .toList(),
-      ),
     );
   }
 }

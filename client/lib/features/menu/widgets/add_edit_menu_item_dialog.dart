@@ -10,7 +10,10 @@ import '../menu_providers.dart';
 import 'manage_categories_dialog.dart';
 
 /// Shows Add/Edit Menu Item responsive dialog or bottom sheet.
-Future<void> showAddEditMenuItemDialog(BuildContext context, {MenuItem? itemToEdit}) {
+Future<void> showAddEditMenuItemDialog(
+  BuildContext context, {
+  MenuItem? itemToEdit,
+}) {
   if (context.isMobile) {
     return showModalBottomSheet(
       context: context,
@@ -37,7 +40,8 @@ class AddEditMenuItemForm extends ConsumerStatefulWidget {
   final MenuItem? itemToEdit;
 
   @override
-  ConsumerState<AddEditMenuItemForm> createState() => _AddEditMenuItemFormState();
+  ConsumerState<AddEditMenuItemForm> createState() =>
+      _AddEditMenuItemFormState();
 }
 
 class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
@@ -46,7 +50,7 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
   late final TextEditingController _descController;
   late final TextEditingController _priceController;
 
-  int? _selectedCategoryId;
+  String? _selectedCategoryId;
   String _selectedUnit = 'kg';
   bool _isAvailable = true;
   Uint8List? _selectedImageBytes;
@@ -60,7 +64,9 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
     final item = widget.itemToEdit;
     _titleController = TextEditingController(text: item?.title ?? '');
     _descController = TextEditingController(text: item?.description ?? '');
-    _priceController = TextEditingController(text: item != null ? item.price.toStringAsFixed(0) : '');
+    _priceController = TextEditingController(
+      text: item != null ? item.price.toStringAsFixed(0) : '',
+    );
     _selectedCategoryId = item?.categoryId;
     _selectedUnit = item?.unit ?? 'kg';
     _isAvailable = item?.isAvailable ?? true;
@@ -131,12 +137,19 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = ref.watch(menuViewModelProvider.select((s) => s.categories));
+    final categories = ref.watch(
+      menuViewModelProvider.select((s) => s.categories),
+    );
     final cs = Theme.of(context).colorScheme;
     final isEditing = widget.itemToEdit != null;
 
     return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.viewInsetsOf(context).bottom + 24),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        24,
+        24,
+        MediaQuery.viewInsetsOf(context).bottom + 24,
+      ),
       child: Form(
         key: _formKey,
         child: Column(
@@ -148,7 +161,9 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
               children: [
                 Text(
                   isEditing ? 'Edit Menu Item' : 'Add New Menu Item',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -185,34 +200,65 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
                         children: [
                           const Text(
                             'Item Image Selected',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             'Optimized JPEG (≤512×512 px) • Stored in Hive',
-                            style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: cs.onSurfaceVariant,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Row(
                             children: [
                               OutlinedButton.icon(
                                 style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
                                   visualDensity: VisualDensity.compact,
                                 ),
-                                onPressed: _isProcessingImage ? null : () => _pickImage(ImageSource.gallery),
+                                onPressed: _isProcessingImage
+                                    ? null
+                                    : () => _pickImage(ImageSource.gallery),
                                 icon: const Icon(Icons.refresh, size: 14),
-                                label: const Text('Change', style: TextStyle(fontSize: 12)),
+                                label: const Text(
+                                  'Change',
+                                  style: TextStyle(fontSize: 12),
+                                ),
                               ),
                               const SizedBox(width: 8),
                               TextButton.icon(
                                 style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
                                   visualDensity: VisualDensity.compact,
                                 ),
-                                onPressed: _isProcessingImage ? null : () => setState(() => _selectedImageBytes = null),
-                                icon: Icon(Icons.delete_outline, size: 14, color: cs.error),
-                                label: Text('Remove', style: TextStyle(fontSize: 12, color: cs.error)),
+                                onPressed: _isProcessingImage
+                                    ? null
+                                    : () => setState(
+                                        () => _selectedImageBytes = null,
+                                      ),
+                                icon: Icon(
+                                  Icons.delete_outline,
+                                  size: 14,
+                                  color: cs.error,
+                                ),
+                                label: Text(
+                                  'Remove',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: cs.error,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -224,11 +270,16 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
               ),
             ] else ...[
               InkWell(
-                onTap: _isProcessingImage ? null : () => _pickImage(ImageSource.gallery),
+                onTap: _isProcessingImage
+                    ? null
+                    : () => _pickImage(ImageSource.gallery),
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 18,
+                    horizontal: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: cs.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(12),
@@ -239,24 +290,44 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
                         ? const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+                              SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
                               SizedBox(width: 12),
-                              Text('Compressing image (max 512×512)...', style: TextStyle(fontSize: 13)),
+                              Text(
+                                'Compressing image (max 512×512)...',
+                                style: TextStyle(fontSize: 13),
+                              ),
                             ],
                           )
                         : Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.add_photo_alternate_outlined, size: 32, color: cs.primary),
+                              Icon(
+                                Icons.add_photo_alternate_outlined,
+                                size: 32,
+                                color: cs.primary,
+                              ),
                               const SizedBox(height: 6),
                               Text(
                                 'Upload Item Image',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: cs.onSurface),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: cs.onSurface,
+                                ),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 'Auto-resized to max 512×512 px and compressed for efficient storage',
-                                style: TextStyle(fontSize: 11, color: cs.outline),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: cs.outline,
+                                ),
                                 textAlign: TextAlign.center,
                               ),
                             ],
@@ -290,7 +361,8 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
               maxLines: 2,
               decoration: const InputDecoration(
                 labelText: 'Description (Optional)',
-                hintText: 'e.g. Fresh pure ghee motichoor ladoo made with dry fruits',
+                hintText:
+                    'e.g. Fresh pure ghee motichoor ladoo made with dry fruits',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -301,25 +373,26 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
-                  child: DropdownButtonFormField<int?>(
+                  child: DropdownButtonFormField<String?>(
                     initialValue: _selectedCategoryId,
                     decoration: const InputDecoration(
                       labelText: 'Category (Optional)',
                       border: OutlineInputBorder(),
                     ),
                     items: [
-                      const DropdownMenuItem<int?>(
+                      const DropdownMenuItem<String?>(
                         value: null,
                         child: Text('Uncategorized'),
                       ),
                       ...categories.map(
-                        (cat) => DropdownMenuItem<int?>(
+                        (cat) => DropdownMenuItem<String?>(
                           value: cat.id,
                           child: Text(cat.name),
                         ),
                       ),
                     ],
-                    onChanged: (val) => setState(() => _selectedCategoryId = val),
+                    onChanged: (val) =>
+                        setState(() => _selectedCategoryId = val),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -339,7 +412,9 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
                   flex: 2,
                   child: TextFormField(
                     controller: _priceController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: const InputDecoration(
                       labelText: 'Price (₹) *',
                       hintText: 'e.g. 480',
@@ -366,7 +441,9 @@ class _AddEditMenuItemFormState extends ConsumerState<AddEditMenuItemForm> {
                       labelText: 'Unit *',
                       border: OutlineInputBorder(),
                     ),
-                    items: _units.map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
+                    items: _units
+                        .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+                        .toList(),
                     onChanged: (val) {
                       if (val != null) setState(() => _selectedUnit = val);
                     },

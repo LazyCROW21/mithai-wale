@@ -1,41 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/app_shell.dart';
+import '../../../core/auth/auth_models.dart';
+import '../../../core/auth/auth_notifier.dart';
 import '../../../core/routing/router_key.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/state/app_state_providers.dart';
 import '../../../l10n/l10n.dart';
 import '../../menu/widgets/manage_categories_dialog.dart';
 import '../widgets/language_selector_card.dart';
+import '../widgets/sync_card.dart';
 
 class SettingsMobileView extends ConsumerWidget {
   const SettingsMobileView({super.key});
 
-  static const _navRoutes = [
-    AppRoutes.home,
-    AppRoutes.shop,
-    AppRoutes.orders,
-    AppRoutes.profile,
-    AppRoutes.settings,
-  ];
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final canEditCatalog = ref.watch(sessionProvider).role != AppRole.employee;
     final themeModeAsync = ref.watch(themeModeProvider);
     final themeMode = themeModeAsync.valueOrNull ?? ThemeMode.system;
     final cs = Theme.of(context).colorScheme;
 
-    final navItems = [
-      NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home), label: l10n.navHome),
-      NavigationDestination(icon: const Icon(Icons.store_outlined), selectedIcon: const Icon(Icons.store), label: l10n.navShop),
-      NavigationDestination(icon: const Icon(Icons.receipt_long_outlined), selectedIcon: const Icon(Icons.receipt_long), label: l10n.navOrders),
-      NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: l10n.navProfile),
-      NavigationDestination(icon: const Icon(Icons.settings), selectedIcon: const Icon(Icons.settings), label: l10n.navSettings),
-    ];
-
     return Scaffold(
       appBar: AppBar(
+        leading: MoreBackButton.of(context),
         title: Text(l10n.navSettings, style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: ListView(
@@ -46,8 +36,12 @@ class SettingsMobileView extends ConsumerWidget {
           const SizedBox(height: 8),
           const LanguageSelectorCard(),
           const SizedBox(height: 20),
+          const SyncCard(),
+          const SizedBox(height: 20),
 
           // Menu & Catalog Management Card
+          // Employees can view the menu but not manage the catalog.
+          if (canEditCatalog)
           Card(
             color: cs.primaryContainer.withAlpha(80),
             elevation: 1,
@@ -159,11 +153,6 @@ class SettingsMobileView extends ConsumerWidget {
             ),
           ),
         ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 4,
-        onDestinationSelected: (i) => AppNav.go(_navRoutes[i]),
-        destinations: navItems,
       ),
     );
   }

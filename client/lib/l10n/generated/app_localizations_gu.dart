@@ -369,4 +369,306 @@ class AppLocalizationsGu extends AppLocalizations {
 
   @override
   String get inventoryLow => 'ઓછું';
+
+  @override
+  String get syncTitle => 'ક્લાઉડ સિંક';
+
+  @override
+  String get syncStatusSynced => 'બધા ફેરફારો સિંક થયા';
+
+  @override
+  String get syncStatusSyncing => 'સિંક થઈ રહ્યું છે…';
+
+  @override
+  String get syncStatusOffline => 'ઑફલાઇન — ફેરફારો આ ઉપકરણ પર સાચવેલા છે';
+
+  @override
+  String syncStatusError(String message) {
+    return 'સિંક સમસ્યા: $message';
+  }
+
+  @override
+  String syncPending(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ફેરફારો અપલોડ થવાના બાકી',
+      one: '1 ફેરફાર અપલોડ થવાનો બાકી',
+      zero: 'કોઈ બાકી ફેરફાર નથી',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String syncFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ફેરફારો સર્વરે નકાર્યા',
+      one: '1 ફેરફાર સર્વરે નકાર્યો',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String syncLastSynced(String time) {
+    return 'છેલ્લે સિંક $time';
+  }
+
+  @override
+  String get syncNever => 'હજી સિંક થયું નથી';
+
+  @override
+  String get syncNow => 'હમણાં સિંક કરો';
+
+  @override
+  String get syncResync => 'ક્લાઉડમાંથી ફરી સિંક કરો';
+
+  @override
+  String get syncResyncDesc =>
+      'આ ઉપકરણ પરનો બધો ડેટા ક્લાઉડની તાજી નકલથી બદલો.';
+
+  @override
+  String get syncResyncConfirmTitle => 'ક્લાઉડમાંથી ફરી સિંક કરવું છે?';
+
+  @override
+  String get syncResyncConfirmBody =>
+      'આ ઉપકરણ પરનો બધો ડેટા ક્લાઉડની નવીનતમ નકલથી બદલાશે. આ માટે ઇન્ટરનેટ જરૂરી છે.';
+
+  @override
+  String syncResyncPendingBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'આ ઉપકરણ પરના $count ફેરફારો હજી અપલોડ થયા નથી.',
+      one: 'આ ઉપકરણ પરનો 1 ફેરફાર હજી અપલોડ થયો નથી.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get syncUploadThenResync => 'પહેલા અપલોડ કરો, પછી ફરી સિંક';
+
+  @override
+  String get syncDiscardAndResync => 'મારા ફેરફારો કાઢી નાખો';
+
+  @override
+  String get syncDiscardConfirm =>
+      'તમારા અપલોડ ન થયેલા ફેરફારો કાયમ માટે ખોવાઈ જશે. ચાલુ રાખવું છે?';
+
+  @override
+  String syncResyncProgress(int count) {
+    return 'ડાઉનલોડ થઈ રહ્યું છે… $count રેકોર્ડ';
+  }
+
+  @override
+  String get syncResyncDone => 'ફરી સિંક પૂર્ણ';
+
+  @override
+  String get syncResyncFailed => 'ફરી સિંક નિષ્ફળ. તમારો હાલનો ડેટા યથાવત છે.';
+
+  @override
+  String get syncClearFailed => 'નકારાયેલા ફેરફારો દૂર કરો';
+
+  @override
+  String syncSignOutPending(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count ફેરફારો અપલોડ થયા નથી. હમણાં સાઇન આઉટ કરવાથી તે આ ઉપકરણ પરથી કાઢી નાખવામાં આવશે.',
+      one:
+          '1 ફેરફાર અપલોડ થયો નથી. હમણાં સાઇન આઉટ કરવાથી તે આ ઉપકરણ પરથી કાઢી નાખવામાં આવશે.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get syncSignOutAnyway => 'તો પણ સાઇન આઉટ કરો';
+
+  @override
+  String get billingShop => 'બિલિંગ દુકાન';
+
+  @override
+  String orderPlacedWithToken(String token, String amount) {
+    return 'ટોકન $token · ઓર્ડર થયો (₹$amount)';
+  }
+
+  @override
+  String get navDashboard => 'ડેશબોર્ડ';
+
+  @override
+  String get navMore => 'વધુ';
+
+  @override
+  String get navLedger => 'ખાતાવહી';
+
+  @override
+  String get navAudit => 'ઓડિટ લોગ';
+
+  @override
+  String get navNewOrder => 'નવો ઓર્ડર';
+
+  @override
+  String get shopFilterAll => 'બધી દુકાનો';
+
+  @override
+  String get shopFilterTooltip => 'દુકાન મુજબ ફિલ્ટર કરો';
+
+  @override
+  String get auditComingSoonTitle => 'ઓડિટ લોગ ટૂંક સમયમાં આવી રહ્યો છે';
+
+  @override
+  String get auditComingSoonBody =>
+      'તમારી બધી દુકાનોમાં થયેલા દરેક ફેરફાર અહીં દેખાશે. આ ફક્ત ઓનલાઇન ઉપલબ્ધ રહેશે.';
+
+  @override
+  String get moreAccountSection => 'એકાઉન્ટ';
+
+  @override
+  String get moreManageSection => 'વ્યવસ્થાપન';
+
+  @override
+  String get orderNewTitle => 'નવો ઓર્ડર';
+
+  @override
+  String get orderShopLabel => 'દુકાન';
+
+  @override
+  String get orderShopRequired => 'દુકાન પસંદ કરો';
+
+  @override
+  String get orderSearchItems => 'વસ્તુ શોધો અને ઉમેરો';
+
+  @override
+  String get orderNoMenuItems => 'મેનુમાં કોઈ વસ્તુ ઉપલબ્ધ નથી';
+
+  @override
+  String get orderDeliveryDate => 'ડિલિવરી તારીખ';
+
+  @override
+  String get orderCustomerName => 'ગ્રાહકનું નામ';
+
+  @override
+  String get orderCustomerPhone => 'ફોન નંબર';
+
+  @override
+  String get orderWalkInCustomer => 'વૉક-ઇન ગ્રાહક';
+
+  @override
+  String get orderDiscount => 'ડિસ્કાઉન્ટ';
+
+  @override
+  String get orderDiscountNone => 'કોઈ નહીં';
+
+  @override
+  String get orderDiscountPercent => '%';
+
+  @override
+  String get orderDiscountFlat => '₹ ફ્લેટ';
+
+  @override
+  String get orderDiscountInvalid => 'યોગ્ય ડિસ્કાઉન્ટ દાખલ કરો';
+
+  @override
+  String orderItemsSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count વસ્તુઓ',
+      one: '1 વસ્તુ',
+      zero: 'કોઈ વસ્તુ ઉમેરી નથી',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get orderAddItemsFirst => 'ઓછામાં ઓછી એક વસ્તુ ઉમેરો';
+
+  @override
+  String get orderPlace => 'ઓર્ડર કરો';
+
+  @override
+  String get orderSetQuantity => 'જથ્થો નક્કી કરો';
+
+  @override
+  String get orderQuantity => 'જથ્થો';
+
+  @override
+  String get menuReadOnly => 'ફક્ત જોવા માટે';
+
+  @override
+  String get statusPlaced => 'ઓર્ડર થયો';
+
+  @override
+  String get statusPreparing => 'તૈયાર થઈ રહ્યું છે';
+
+  @override
+  String get statusReady => 'તૈયાર';
+
+  @override
+  String get statusDelivering => 'ડિલિવરીમાં';
+
+  @override
+  String get statusDelivered => 'ડિલિવર થયું';
+
+  @override
+  String get statusReturned => 'પરત';
+
+  @override
+  String get orderItemsInOrder => 'ઓર્ડરની વસ્તુઓ';
+
+  @override
+  String get orderNoLinesYet => 'હજુ કોઈ વસ્તુ નથી. ઉપર શોધીને વસ્તુઓ ઉમેરો.';
+
+  @override
+  String orderDeliveryOn(String date) {
+    return 'ડિલિવરી · $date';
+  }
+
+  @override
+  String get orderAddForAnotherDate => 'બીજી તારીખ માટે ઉમેરો';
+
+  @override
+  String get orderChangeDate => 'તારીખ બદલો';
+
+  @override
+  String get orderRemoveItem => 'દૂર કરો';
+
+  @override
+  String get orderDeliveryStatus => 'ડિલિવરી સ્થિતિ';
+
+  @override
+  String get orderOverallStatus => 'કુલ સ્થિતિ';
+
+  @override
+  String get orderStatusPerDateHint =>
+      'દરેક ડિલિવરી તારીખની પોતાની સ્થિતિ છે — નીચે તારીખ પર સેટ કરો.';
+
+  @override
+  String get orderMarkAll => 'બધી તારીખો સેટ કરો';
+
+  @override
+  String orderLineCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count વસ્તુઓ',
+      one: '1 વસ્તુ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get orderDuplicate => 'ડુપ્લિકેટ';
+
+  @override
+  String get orderMergeDuplicates => 'એક લાઇનમાં ભેગું કરો';
+
+  @override
+  String get orderDefaultDateHint =>
+      'નવી વસ્તુઓ માટેની ડિફોલ્ટ તારીખ — કોઈ પણ લાઇનની તારીખ તેના તારીખ બટનથી બદલો';
+
+  @override
+  String get homeItemsToBuildTodayDesc => 'આજે બનાવવાની કુલ અલગ વસ્તુઓ';
 }

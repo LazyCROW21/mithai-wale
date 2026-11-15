@@ -1,46 +1,51 @@
 import 'dart:typed_data';
 
-import 'package:hive/hive.dart';
-
+import '../../sync/ids.dart';
+import '../../sync/sync_store.dart';
 import '../models/menu_item_model.dart';
 import 'menu_repository.dart';
 
+/// Offline-first menu items. Images stay on this device (not synced yet).
 class HiveMenuRepository implements IMenuRepository {
-  HiveMenuRepository(this._box);
+  HiveMenuRepository(this._store);
 
-  final Box<Map> _box;
+  final SyncStore _store;
+  static const _c = SyncCollections.menuItems;
 
   @override
   Future<List<MenuItem>> getAll() async {
-    return _box.values.map((map) => MenuItem.fromMap(map)).toList();
+    final list = <MenuItem>[];
+    for (final map in _store.box(_c).values) {
+      try {
+        list.add(MenuItem.fromMap(map));
+      } catch (_) {}
+    }
+    list.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    return list;
   }
 
   @override
-  Future<List<MenuItem>> getByCategory(int categoryId) async {
-    final all = await getAll();
-    return all.where((item) => item.categoryId == categoryId).toList();
+  Future<List<MenuItem>> getByCategory(String categoryId) async =>
+      (await getAll()).where((item) => item.categoryId == categoryId).toList();
+
+  @override
+  Future<MenuItem?> getById(String id) async {
+    final map = _store.box(_c).get(id);
+    return map == null ? null : MenuItem.fromMap(map);
   }
 
   @override
-  Future<MenuItem?> getById(int id) async {
-    final map = _box.get(id);
-    if (map == null) return null;
-    return MenuItem.fromMap(map);
-  }
-
-  @override
-  Future<int> add({
+  Future<String> add({
     required String title,
     String? description,
-    int? categoryId,
+    String? categoryId,
     required double price,
     required String unit,
     bool isAvailable = true,
     Uint8List? imageBytes,
   }) async {
-    final nextId = _nextId();
     final item = MenuItem(
-      id: nextId,
+      id: uuidV4(),
       title: title,
       description: description,
       categoryId: categoryId,
@@ -50,34 +55,33 @@ class HiveMenuRepository implements IMenuRepository {
       imageBytes: imageBytes,
       createdAt: DateTime.now(),
     );
-    await _box.put(nextId, item.toMap());
-    return nextId;
+    final record = item.toMap();
+    await _store.box(_c).put(item.id, record);
+    await _store.enqueueCreate(_c, item.id, record);
+    return item.id;
   }
 
   @override
   Future<bool> update(MenuItem item) async {
-    if (!_box.containsKey(item.id)) return false;
-    await _box.put(item.id, item.toMap());
+    final before = _store.box(_c).get(item.id);
+    if (before == null) return false;
+    final after = {...before, ...item.toMap()};
+    await _store.box(_c).put(item.id, after);
+    await _store.enqueueUpdate(_c, item.id, before, after);
     return true;
   }
 
   @override
-  Future<int> delete(int id) async {
-    if (!_box.containsKey(id)) return 0;
-    await _box.delete(id);
+  Future<int> delete(String id) async {
+    if (!_store.box(_c).containsKey(id)) return 0;
+    await _store.box(_c).delete(id);
+    await _store.enqueueDelete(_c, id);
     return 1;
   }
 
   @override
   Stream<List<MenuItem>> watchAll() async* {
     yield await getAll();
-    yield* _box.watch().asyncMap((_) => getAll());
-  }
-
-  int _nextId() {
-    if (_box.isEmpty) return 1;
-    final keys = _box.keys.whereType<int>();
-    if (keys.isEmpty) return 1;
-    return keys.reduce((max, e) => e > max ? e : max) + 1;
+    yield* _store.box(_c).watch().asyncMap((_) => getAll());
   }
 }

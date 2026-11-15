@@ -47,10 +47,10 @@ class HomeViewModel extends Notifier<HomeState> {
     }).toList();
 
     // 2. Filter today's active orders (excluding cancelled or refunded/returned)
-    final todayActiveOrders = todayAllOrders.where((o) {
-      final s = o.status.toLowerCase().trim();
-      return s != 'cancelled' && s != 'returned' && s != 'refunded';
-    }).toList();
+    // Status that matters today: today's delivery when there is one, else overall.
+    final today = DateTime.now();
+    String todayStatus(OrderModel o) => o.statusOn(today);
+    final todayActiveOrders = todayAllOrders.where((o) => !OrderStatus.isClosed(todayStatus(o))).toList();
 
     // Calculate balances and totals for today's active orders
     final orderBalances = <String, double>{};
@@ -111,8 +111,7 @@ class HomeViewModel extends Notifier<HomeState> {
     // From today's active orders (non-cancelled, non-refunded), include those
     // that are still pending fulfillment (not delivered/completed) OR have pending payment collection/refund.
     final todayPendingOrders = todayActiveOrders.where((o) {
-      final s = o.status.toLowerCase().trim();
-      final isFulfilled = (s == 'delivered' || s == 'completed');
+      final isFulfilled = OrderStatus.isFulfilled(todayStatus(o));
       final balance = orderBalances[o.id] ?? o.finalBill;
       final isPaymentSettled = balance.abs() <= 0.009;
       return !(isFulfilled && isPaymentSettled);
@@ -120,10 +119,7 @@ class HomeViewModel extends Notifier<HomeState> {
 
     // Total money collection across all active orders in DB
     final totalMoneyCollection = allOrders
-        .where((o) {
-          final s = o.status.toLowerCase().trim();
-          return s != 'cancelled' && s != 'returned' && s != 'refunded';
-        })
+        .where((o) => !OrderStatus.isClosed(o.status))
         .fold<double>(0.0, (sum, o) => sum + o.finalBill);
 
     // 3. Menu items to build: combine items on same delivery date, sort and group by delivery date
@@ -148,15 +144,28 @@ class HomeViewModel extends Notifier<HomeState> {
   static List<MenuItemBuildSummary> _calculateItemsToBuild(
     List<OrderModel> orders,
   ) {
-    // Filter out items from orders that are cancelled, refunded (or returned), or delivered (or completed)
-    final activeOrders = orders.where((o) {
-      final s = o.status.toLowerCase().trim();
-      return s != 'cancelled' &&
-          s != 'returned' &&
-          s != 'refunded' &&
-          s != 'delivered' &&
-          s != 'completed';
-    }).toList();
+    // Kitchen prep window: today through the next 7 days. Past delivery dates
+    // are never shown.
+    final today = dayOf(DateTime.now());
+    final lastDay = today.add(const Duration(days: 7));
+    bool inWindow(DateTime d) {
+      final day = dayOf(d);
+      return !day.isBefore(today) && !day.isAfter(lastDay);
+    }
+
+    // Only deliveries still to be made: skip items whose delivery date is
+    // cancelled/returned or already delivered/completed (status is per date).
+    final activeOrders = orders
+        .map((o) => o.copyWith(
+              items: o.items
+                  .where((i) =>
+                      inWindow(i.deliveryDate) &&
+                      !OrderStatus.isClosed(i.status) &&
+                      !OrderStatus.isFulfilled(i.status))
+                  .toList(),
+            ))
+        .where((o) => o.items.isNotEmpty)
+        .toList();
 
     // Key: composite lowercase item name + unit + delivery date
     // Duplicate items with different delivery date remain separate; items on the same date combine!

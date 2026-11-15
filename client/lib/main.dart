@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/auth/auth_notifier.dart';
+import 'core/auth/auth_models.dart';
 import 'core/database/db_provider.dart';
+import 'core/sync/sync_engine.dart';
 import 'core/di/service_locator.dart';
 import 'core/routing/app_router.dart';
 import 'core/state/app_state_providers.dart';
@@ -25,7 +27,24 @@ void main() async {
   // 2. Dependency injection
   await setupServiceLocator();
 
-  // 3. Restore a saved login (or land on the login screen)
+  // 3. Offline-first sync: starts when a user is signed in, stops on sign-out.
+  syncEngine.attach(DatabaseProvider.instance.sync, appAuth.api);
+  String? syncingFor;
+  appAuth.addListener((auth) {
+    final AuthSession? s = auth.session;
+    if (s != null && syncingFor != s.ownerKey) {
+      syncingFor = s.ownerKey;
+      syncEngine.start(
+        owner: s.ownerKey,
+        defaultShopId: s.shops.isEmpty ? null : s.shops.first.id,
+      );
+    } else if (s == null && syncingFor != null) {
+      syncingFor = null;
+      syncEngine.stop();
+    }
+  }, fireImmediately: false);
+
+  // 4. Restore a saved login (or land on the login screen)
   await appAuth.restore();
 
   runApp(

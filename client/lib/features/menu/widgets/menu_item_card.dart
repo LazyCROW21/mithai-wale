@@ -1,14 +1,11 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/models/category_model.dart';
 import '../../../core/database/models/menu_item_model.dart';
-import '../../cart/cart_providers.dart';
-import '../../cart/models/cart_item_model.dart';
-import '../../cart/widgets/edit_quantity_dialog.dart';
+import '../../../core/utils/format_utils.dart';
 
-class MenuItemCard extends ConsumerWidget {
+class MenuItemCard extends StatelessWidget {
   const MenuItemCard({
     super.key,
     required this.product,
@@ -16,6 +13,7 @@ class MenuItemCard extends ConsumerWidget {
     this.onEdit,
     this.onDelete,
     this.onToggleAvailability,
+    this.readOnly = false,
   });
 
   final MenuItem product;
@@ -23,6 +21,9 @@ class MenuItemCard extends ConsumerWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final ValueChanged<bool>? onToggleAvailability;
+
+  /// Hides the edit/delete/stock options (e.g. for employees).
+  final bool readOnly;
 
   void _showFullImage(BuildContext context, String title, Uint8List bytes) {
     showDialog(
@@ -35,7 +36,10 @@ class MenuItemCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             AppBar(
-              title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+              title: Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               leading: IconButton(
                 icon: const Icon(Icons.close),
                 onPressed: () => Navigator.of(ctx).pop(),
@@ -43,10 +47,7 @@ class MenuItemCard extends ConsumerWidget {
             ),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 512, maxHeight: 512),
-              child: Image.memory(
-                bytes,
-                fit: BoxFit.contain,
-              ),
+              child: Image.memory(bytes, fit: BoxFit.contain),
             ),
           ],
         ),
@@ -55,30 +56,18 @@ class MenuItemCard extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    // Reactively watch this specific item's quantity in cart
-    final quantity = ref.watch(
-      cartProvider.select((cart) => cart.getQuantityForProduct(product.id)),
-    );
-    final isInCart = quantity > 0;
-    final cartVm = ref.read(cartProvider.notifier);
-
-    final normalizedUnit = CartItem.normalizedUnit(product.unit);
-    final step = (normalizedUnit == 'kg' || normalizedUnit == 'litre') ? 0.5 : 1.0;
-    final priceLabel =
-        'Rs. ${CartItem.formatNumber(product.price)}/$normalizedUnit';
+    final unit = normalizedUnit(product.unit);
+    final priceLabel = 'Rs. ${formatNumber(product.price)}/$unit';
 
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: isInCart ? cs.primary.withValues(alpha: 0.5) : cs.outlineVariant,
-          width: isInCart ? 1.5 : 1.0,
-        ),
+        side: BorderSide(color: cs.outlineVariant, width: 1.0),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -87,7 +76,9 @@ class MenuItemCard extends ConsumerWidget {
             padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: isFiniteHeight ? MainAxisSize.max : MainAxisSize.min,
+              mainAxisSize: isFiniteHeight
+                  ? MainAxisSize.max
+                  : MainAxisSize.min,
               children: [
                 // Header Row: Optional Uploaded Image, Title (line 1), Category (sub title), and Actions Menu
                 Row(
@@ -99,7 +90,11 @@ class MenuItemCard extends ConsumerWidget {
                         message: 'Tap to view full image',
                         child: InkWell(
                           borderRadius: BorderRadius.circular(10),
-                          onTap: () => _showFullImage(context, product.title, product.imageBytes!),
+                          onTap: () => _showFullImage(
+                            context,
+                            product.title,
+                            product.imageBytes!,
+                          ),
                           child: Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10),
@@ -154,9 +149,16 @@ class MenuItemCard extends ConsumerWidget {
                     ),
 
                     // Popup menu for Edit / Delete / Out of stock toggle
-                    if (onEdit != null || onDelete != null || onToggleAvailability != null)
+                    if (!readOnly &&
+                        (onEdit != null ||
+                            onDelete != null ||
+                            onToggleAvailability != null))
                       PopupMenuButton<String>(
-                        icon: Icon(Icons.more_vert, size: 20, color: cs.outline),
+                        icon: Icon(
+                          Icons.more_vert,
+                          size: 20,
+                          color: cs.outline,
+                        ),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                         tooltip: 'Item options',
@@ -175,11 +177,17 @@ class MenuItemCard extends ConsumerWidget {
                             child: Row(
                               children: [
                                 Icon(
-                                  product.isAvailable ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                  product.isAvailable
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
                                   size: 18,
                                 ),
                                 const SizedBox(width: 8),
-                                Text(product.isAvailable ? 'Mark Out of Stock' : 'Mark In Stock'),
+                                Text(
+                                  product.isAvailable
+                                      ? 'Mark Out of Stock'
+                                      : 'Mark In Stock',
+                                ),
                               ],
                             ),
                           ),
@@ -199,9 +207,16 @@ class MenuItemCard extends ConsumerWidget {
                               value: 'delete',
                               child: Row(
                                 children: [
-                                  Icon(Icons.delete_outline, size: 18, color: cs.error),
+                                  Icon(
+                                    Icons.delete_outline,
+                                    size: 18,
+                                    color: cs.error,
+                                  ),
                                   const SizedBox(width: 8),
-                                  Text('Delete Item', style: TextStyle(color: cs.error)),
+                                  Text(
+                                    'Delete Item',
+                                    style: TextStyle(color: cs.error),
+                                  ),
                                 ],
                               ),
                             ),
@@ -211,17 +226,23 @@ class MenuItemCard extends ConsumerWidget {
                 ),
 
                 // Item Description
-                if (product.description != null && product.description!.isNotEmpty) ...[
+                if (product.description != null &&
+                    product.description!.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text(
                     product.description!,
-                    style: theme.textTheme.bodySmall?.copyWith(color: cs.outline),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.outline,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
 
-                if (isFiniteHeight) const Spacer() else const SizedBox(height: 14),
+                if (isFiniteHeight)
+                  const Spacer()
+                else
+                  const SizedBox(height: 14),
 
                 // Price and Stock status
                 Row(
@@ -236,7 +257,10 @@ class MenuItemCard extends ConsumerWidget {
                     const Spacer(),
                     if (!product.isAvailable)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: cs.errorContainer,
                           borderRadius: BorderRadius.circular(6),
@@ -252,92 +276,6 @@ class MenuItemCard extends ConsumerWidget {
                       ),
                   ],
                 ),
-                const SizedBox(height: 10),
-
-                // Action: "Add to cart" or "- {qty} +" Stepper Control
-                if (!product.isAvailable)
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: null,
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      child: const Text('Unavailable'),
-                    ),
-                  )
-                else if (!isInCart)
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.tonal(
-                      style: FilledButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                      ),
-                      onPressed: () {
-                        cartVm.addItem(product, 1.0);
-                      },
-                      child: const Text('Add to Cart', style: TextStyle(fontWeight: FontWeight.w600)),
-                    ),
-                  )
-                else
-                  // Dynamic "- {qty} +" Quantity Control
-                  Container(
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: cs.primaryContainer,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: cs.primary.withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        // Decrement button
-                        IconButton(
-                          icon: const Icon(Icons.remove, size: 18),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                          color: cs.onPrimaryContainer,
-                          onPressed: () => cartVm.decrementProduct(product.id, step),
-                        ),
-
-                        // Tappable Quantity Display: Opens modal to edit quantity directly
-                        Expanded(
-                          child: Tooltip(
-                            message: 'Tap to edit quantity',
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(6),
-                              onTap: () => showEditQuantityDialog(
-                                context,
-                                item: product,
-                                currentQuantity: quantity,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  '${CartItem.formatNumber(quantity)} $normalizedUnit',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: cs.onPrimaryContainer,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        // Increment button
-                        IconButton(
-                          icon: const Icon(Icons.add, size: 18),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                          color: cs.onPrimaryContainer,
-                          onPressed: () => cartVm.addItem(product, step),
-                        ),
-                      ],
-                    ),
-                  ),
               ],
             ),
           );

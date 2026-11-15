@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/auth/auth_notifier.dart';
+import '../../core/sync/sync_engine.dart';
 import '../../core/widgets/admin_scaffold.dart';
 import '../../l10n/l10n.dart';
 
@@ -100,6 +101,12 @@ class ShopsPage extends ConsumerWidget {
         await api.patch('/shops/${shop.id}', body: body);
       }
       ref.invalidate(shopsProvider);
+      // Keep the session's shop list (and the billing shop) current.
+      await appAuth.refreshSession();
+      final shops = appAuth.current.session?.shops ?? const [];
+      if (syncEngine.store.activeShopId == null && shops.isNotEmpty) {
+        await syncEngine.store.setMeta('activeShopId', shops.first.id);
+      }
     } catch (e) {
       if (context.mounted) showApiError(context, e);
     }

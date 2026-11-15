@@ -2,22 +2,18 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { Collections } from "../db/collections";
 import { TenantRepo } from "../db/tenant-repo";
-import { notFound, notImplemented } from "../lib/errors";
+import { notFound } from "../lib/errors";
 import { parseBody } from "../lib/validate";
 import { requireRole, userOf } from "../middleware/auth";
 import type { AppEnv, InventoryItem, MenuItem, ShopMenuItem } from "../types/models";
 import { crudRouter } from "./crud";
+import { inventoryDoc } from "../sync/schemas";
 
 const shopScope = (c: { req: { param: (k: string) => string | undefined } }) => ({
   shopId: c.req.param("shopId"),
 });
 
-const inventoryCreate = z.object({
-  name: z.string().min(1),
-  unit: z.string().min(1),
-  quantity: z.number().min(0).default(0),
-  lowStockThreshold: z.number().min(0).default(0),
-});
+const inventoryCreate = inventoryDoc;
 
 const inventory = crudRouter<InventoryItem>({
   collection: Collections.inventoryItems,
@@ -48,13 +44,13 @@ const inventory = crudRouter<InventoryItem>({
 const menu = new Hono<AppEnv>()
   .get("/", async (c) => {
     const { tenantId } = userOf(c);
-    const items = await new TenantRepo<MenuItem>(Collections.menuItems, tenantId).list({ active: true });
+    const items = await new TenantRepo<MenuItem>(Collections.menuItems, tenantId).list({ isAvailable: true });
     const overrides = await new TenantRepo<ShopMenuItem>(Collections.shopMenuItems, tenantId, shopScope(c)).list();
     const byItem = new Map(overrides.map((o) => [o.menuItemId, o]));
     return c.json(
       items.map((item) => {
         const o = byItem.get(item._id);
-        return { ...item, enabled: o?.enabled ?? true, price: o?.price ?? item.basePrice };
+        return { ...item, enabled: o?.enabled ?? true, price: o?.price ?? item.price };
       }),
     );
   })
@@ -75,7 +71,7 @@ const menu = new Hono<AppEnv>()
         {
           $set: set,
           ...(body.price === undefined ? { $unset: { price: "" } } : {}),
-          $setOnInsert: { _id: crypto.randomUUID(), createdAt: new Date() },
+          $setOnInsert: { _id: crypto.randomUUID(), createdAt: new Date(), deletedAt: null },
         },
         true,
       );
@@ -83,15 +79,9 @@ const menu = new Hono<AppEnv>()
     },
   );
 
-// Business layer for orders/payments is not implemented yet.
-const stub = (what: string) =>
-  new Hono<AppEnv>().all("*", () => {
-    throw notImplemented(what);
-  });
-
 /** Everything mounted here is already behind authenticate + requireShopAccess. */
 export const shopScopedRouter = new Hono<AppEnv>()
   .route("/menu", menu)
-  .route("/inventory", inventory)
-  .route("/orders", stub("Orders"))
-  .route("/payments", stub("Payments"));
+  .route("/inventory", inventory);
+// Orders and payments are written through /sync/push; read them via
+// /orders?shopId= and /payments?shopId=.

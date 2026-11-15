@@ -1,62 +1,58 @@
-import 'package:hive/hive.dart';
-
+import '../../sync/ids.dart';
+import '../../sync/sync_store.dart';
 import '../models/category_model.dart';
 import 'category_repository.dart';
 
+/// Offline-first categories: writes go to Hive and the sync outbox together.
 class HiveCategoryRepository implements ICategoryRepository {
-  HiveCategoryRepository(this._box);
+  HiveCategoryRepository(this._store);
 
-  final Box<Map> _box;
+  final SyncStore _store;
+  static const _c = SyncCollections.categories;
 
   @override
   Future<List<Category>> getAll() async {
-    return _box.values.map((map) => Category.fromMap(map)).toList();
+    final list = _store.box(_c).values.map(Category.fromMap).toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    return list;
   }
 
   @override
-  Future<Category?> getById(int id) async {
-    final map = _box.get(id);
-    if (map == null) return null;
-    return Category.fromMap(map);
+  Future<Category?> getById(String id) async {
+    final map = _store.box(_c).get(id);
+    return map == null ? null : Category.fromMap(map);
   }
 
   @override
-  Future<int> add({required String name, String? emoji}) async {
-    final nextId = _nextId();
-    final category = Category(
-      id: nextId,
-      name: name,
-      emoji: emoji,
-      createdAt: DateTime.now(),
-    );
-    await _box.put(nextId, category.toMap());
-    return nextId;
+  Future<String> add({required String name, String? emoji}) async {
+    final category = Category(id: uuidV4(), name: name, emoji: emoji, createdAt: DateTime.now());
+    final record = category.toMap();
+    await _store.box(_c).put(category.id, record);
+    await _store.enqueueCreate(_c, category.id, record);
+    return category.id;
   }
 
   @override
   Future<bool> update(Category category) async {
-    if (!_box.containsKey(category.id)) return false;
-    await _box.put(category.id, category.toMap());
+    final before = _store.box(_c).get(category.id);
+    if (before == null) return false;
+    final after = {...before, ...category.toMap()};
+    await _store.box(_c).put(category.id, after);
+    await _store.enqueueUpdate(_c, category.id, before, after);
     return true;
   }
 
   @override
-  Future<int> delete(int id) async {
-    if (!_box.containsKey(id)) return 0;
-    await _box.delete(id);
+  Future<int> delete(String id) async {
+    if (!_store.box(_c).containsKey(id)) return 0;
+    await _store.box(_c).delete(id);
+    await _store.enqueueDelete(_c, id);
     return 1;
   }
 
   @override
   Stream<List<Category>> watchAll() async* {
     yield await getAll();
-    yield* _box.watch().asyncMap((_) => getAll());
-  }
-
-  int _nextId() {
-    if (_box.isEmpty) return 1;
-    final keys = _box.keys.whereType<int>();
-    if (keys.isEmpty) return 1;
-    return keys.reduce((max, e) => e > max ? e : max) + 1;
+    yield* _store.box(_c).watch().asyncMap((_) => getAll());
   }
 }

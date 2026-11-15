@@ -342,5 +342,163 @@
   "inventoryAdjustBy": "Change by (+/-)",
   "inventoryAllShops": "All shops",
   "inventoryShop": "Shop",
-  "inventoryLow": "Low"
+  "inventoryLow": "Low",
+  "syncTitle": "Cloud sync",
+  "syncStatusSynced": "All changes synced",
+  "syncStatusSyncing": "Syncing…",
+  "syncStatusOffline": "Offline — changes are saved on this device",
+  "syncStatusError": "Sync problem: {message}",
+  "@syncStatusError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "syncPending": "{count, plural, =0{No pending changes} =1{1 change waiting to upload} other{{count} changes waiting to upload}}",
+  "@syncPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncFailed": "{count, plural, =1{1 change was rejected by the server} other{{count} changes were rejected by the server}}",
+  "@syncFailed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncLastSynced": "Last synced {time}",
+  "@syncLastSynced": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "syncNever": "Not synced yet",
+  "syncNow": "Sync now",
+  "syncResync": "Re-sync from cloud",
+  "syncResyncDesc": "Replace all data on this device with a fresh copy from the cloud.",
+  "syncResyncConfirmTitle": "Re-sync from cloud?",
+  "syncResyncConfirmBody": "All data on this device will be replaced with the latest copy from the cloud. This needs an internet connection.",
+  "syncResyncPendingBody": "{count, plural, =1{1 change on this device hasn't been uploaded yet.} other{{count} changes on this device haven't been uploaded yet.}}",
+  "@syncResyncPendingBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncUploadThenResync": "Upload first, then re-sync",
+  "syncDiscardAndResync": "Discard my changes",
+  "syncDiscardConfirm": "Your un-uploaded changes will be lost permanently. Continue?",
+  "syncResyncProgress": "Downloading… {count} records",
+  "@syncResyncProgress": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncResyncDone": "Re-sync complete",
+  "syncResyncFailed": "Re-sync failed. Your current data is unchanged.",
+  "syncClearFailed": "Dismiss rejected changes",
+  "syncSignOutPending": "{count, plural, =1{1 change hasn't been uploaded. Signing out now will delete it from this device.} other{{count} changes haven't been uploaded. Signing out now will delete them from this device.}}",
+  "@syncSignOutPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncSignOutAnyway": "Sign out anyway",
+  "billingShop": "Billing shop",
+  "orderPlacedWithToken": "Token {token} · order placed (₹{amount})",
+  "@orderPlacedWithToken": {
+    "placeholders": {
+      "token": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "navDashboard": "Dashboard",
+  "navMore": "More",
+  "navLedger": "Ledger",
+  "navAudit": "Audit log",
+  "navNewOrder": "New order",
+  "shopFilterAll": "All shops",
+  "shopFilterTooltip": "Filter by shop",
+  "auditComingSoonTitle": "Audit log is coming soon",
+  "auditComingSoonBody": "Every change made across your shops will be listed here. This will be available online only.",
+  "moreAccountSection": "Account",
+  "moreManageSection": "Manage",
+  "orderNewTitle": "New order",
+  "orderShopLabel": "Shop",
+  "orderShopRequired": "Select a shop",
+  "orderSearchItems": "Search and add an item",
+  "orderNoMenuItems": "No menu items available",
+  "orderDeliveryDate": "Delivery date",
+  "orderCustomerName": "Customer name",
+  "orderCustomerPhone": "Phone number",
+  "orderWalkInCustomer": "Walk-in customer",
+  "orderDiscount": "Discount",
+  "orderDiscountNone": "None",
+  "orderDiscountPercent": "%",
+  "orderDiscountFlat": "₹ Flat",
+  "orderDiscountInvalid": "Enter a valid discount",
+  "orderItemsSelected": "{count, plural, =0{No items added} =1{1 item} other{{count} items}}",
+  "@orderItemsSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "orderAddItemsFirst": "Add at least one item",
+  "orderPlace": "Place order",
+  "orderSetQuantity": "Set quantity",
+  "orderQuantity": "Quantity",
+  "menuReadOnly": "View only",
+  "statusPlaced": "Placed",
+  "statusPreparing": "Preparing",
+  "statusReady": "Ready",
+  "statusDelivering": "Delivering",
+  "statusDelivered": "Delivered",
+  "statusReturned": "Returned",
+  "orderItemsInOrder": "Items in order",
+  "orderNoLinesYet": "No items yet. Search above to add items.",
+  "orderDeliveryOn": "Delivery · {date}",
+  "@orderDeliveryOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "orderAddForAnotherDate": "Add for another date",
+  "orderChangeDate": "Change date",
+  "orderRemoveItem": "Remove",
+  "orderDeliveryStatus": "Delivery status",
+  "orderOverallStatus": "Overall status",
+  "orderStatusPerDateHint": "Each delivery date has its own status — set it on the date below.",
+  "orderMarkAll": "Set all dates to",
+  "orderLineCount": "{count, plural, =1{1 item} other{{count} items}}",
+  "@orderLineCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "orderDuplicate": "Duplicate",
+  "orderMergeDuplicates": "Merge into one row",
+  "orderDefaultDateHint": "Default date for new items — change any row's date with its date button",
+  "homeItemsToBuildTodayDesc": "Total unique items to build for today"
 }

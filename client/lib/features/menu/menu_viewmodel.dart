@@ -27,17 +27,23 @@ class MenuViewModel extends Notifier<MenuState> {
   }
 
   void _listenToStreams() {
-    _categoriesSub = _categoryRepo.watchAll().listen((categories) {
-      state = state.copyWith(categories: categories, isLoading: false);
-    }, onError: (err) {
-      state = state.copyWith(error: err.toString(), isLoading: false);
-    });
+    _categoriesSub = _categoryRepo.watchAll().listen(
+      (categories) {
+        state = state.copyWith(categories: categories, isLoading: false);
+      },
+      onError: (err) {
+        state = state.copyWith(error: err.toString(), isLoading: false);
+      },
+    );
 
-    _itemsSub = _menuRepo.watchAll().listen((items) {
-      state = state.copyWith(items: items, isLoading: false);
-    }, onError: (err) {
-      state = state.copyWith(error: err.toString(), isLoading: false);
-    });
+    _itemsSub = _menuRepo.watchAll().listen(
+      (items) {
+        state = state.copyWith(items: items, isLoading: false);
+      },
+      onError: (err) {
+        state = state.copyWith(error: err.toString(), isLoading: false);
+      },
+    );
   }
 
   void setCategoryFilter(String categoryName) {
@@ -51,7 +57,7 @@ class MenuViewModel extends Notifier<MenuState> {
   Future<void> addMenuItem({
     required String title,
     String? description,
-    int? categoryId,
+    String? categoryId,
     required double price,
     required String unit,
     bool isAvailable = true,
@@ -80,7 +86,7 @@ class MenuViewModel extends Notifier<MenuState> {
     }
   }
 
-  Future<void> deleteMenuItem(int id) async {
+  Future<void> deleteMenuItem(String id) async {
     try {
       await _menuRepo.delete(id);
     } catch (e) {
@@ -109,7 +115,7 @@ class MenuViewModel extends Notifier<MenuState> {
     }
   }
 
-  Future<void> deleteCategory(int id) async {
+  Future<void> deleteCategory(String id) async {
     try {
       await _categoryRepo.delete(id);
     } catch (e) {

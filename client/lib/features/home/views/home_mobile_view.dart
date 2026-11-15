@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/state/shop_filter.dart';
 import '../../../core/widgets/account_menu_button.dart';
 import '../../../core/routing/router_key.dart';
 import '../../../core/routing/routes.dart';
@@ -11,42 +12,6 @@ import '../widgets/order_highlight_section.dart';
 
 class HomeMobileView extends ConsumerWidget {
   const HomeMobileView({super.key});
-
-  static const _navItems = [
-    NavigationDestination(
-      icon: Icon(Icons.dashboard_outlined),
-      selectedIcon: Icon(Icons.dashboard),
-      label: 'Home',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.storefront_outlined),
-      selectedIcon: Icon(Icons.storefront),
-      label: 'Shop',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.receipt_long_outlined),
-      selectedIcon: Icon(Icons.receipt_long),
-      label: 'Orders',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.person_outline),
-      selectedIcon: Icon(Icons.person),
-      label: 'Profile',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.settings_outlined),
-      selectedIcon: Icon(Icons.settings),
-      label: 'Settings',
-    ),
-  ];
-
-  static const _navRoutes = [
-    AppRoutes.home,
-    AppRoutes.shop,
-    AppRoutes.orders,
-    AppRoutes.profile,
-    AppRoutes.settings,
-  ];
 
   static String _formatCurrentDate() {
     final now = DateTime.now();
@@ -76,6 +41,7 @@ class HomeMobileView extends ConsumerWidget {
         ),
         centerTitle: true,
         actions: [
+          const ShopFilterButton(),
           const AccountMenuButton(),
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -122,18 +88,8 @@ class HomeMobileView extends ConsumerWidget {
 
           // ── SECTION 3: Menu Items to Build from All Orders (eg: Ladoo = 12 kg (total 5 orders)) ──
           const MenuItemsToBuildCard(),
-          const SizedBox(height: 80), // Padding for floating action button
+          const SizedBox(height: 96), // Clearance for the shell's new-order button
         ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0, // Home
-        onDestinationSelected: (i) => AppNav.go(_navRoutes[i]),
-        destinations: _navItems,
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => AppNav.go(AppRoutes.shop),
-        icon: const Icon(Icons.add_shopping_cart),
-        label: const Text('Start Order'),
       ),
     );
   }

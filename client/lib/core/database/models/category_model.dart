@@ -11,7 +11,7 @@ class Category {
 
   factory Category.fromMap(Map<dynamic, dynamic> map) {
     return Category(
-      id: map['id'] as int,
+      id: map['id'] as String,
       name: map['name'] as String,
       emoji: map['emoji'] as String?,
       createdAt: map['createdAt'] is String
@@ -20,7 +20,7 @@ class Category {
     );
   }
 
-  final int id;
+  final String id;
   final String name;
   final String? emoji;
   final DateTime createdAt;
@@ -35,7 +35,7 @@ class Category {
   }
 
   Category copyWith({
-    int? id,
+    String? id,
     String? name,
     Object? emoji = _undefined,
     DateTime? createdAt,

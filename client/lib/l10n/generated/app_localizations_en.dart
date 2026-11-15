@@ -370,4 +370,308 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryLow => 'Low';
+
+  @override
+  String get syncTitle => 'Cloud sync';
+
+  @override
+  String get syncStatusSynced => 'All changes synced';
+
+  @override
+  String get syncStatusSyncing => 'Syncing…';
+
+  @override
+  String get syncStatusOffline => 'Offline — changes are saved on this device';
+
+  @override
+  String syncStatusError(String message) {
+    return 'Sync problem: $message';
+  }
+
+  @override
+  String syncPending(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count changes waiting to upload',
+      one: '1 change waiting to upload',
+      zero: 'No pending changes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String syncFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count changes were rejected by the server',
+      one: '1 change was rejected by the server',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String syncLastSynced(String time) {
+    return 'Last synced $time';
+  }
+
+  @override
+  String get syncNever => 'Not synced yet';
+
+  @override
+  String get syncNow => 'Sync now';
+
+  @override
+  String get syncResync => 'Re-sync from cloud';
+
+  @override
+  String get syncResyncDesc =>
+      'Replace all data on this device with a fresh copy from the cloud.';
+
+  @override
+  String get syncResyncConfirmTitle => 'Re-sync from cloud?';
+
+  @override
+  String get syncResyncConfirmBody =>
+      'All data on this device will be replaced with the latest copy from the cloud. This needs an internet connection.';
+
+  @override
+  String syncResyncPendingBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count changes on this device haven\'t been uploaded yet.',
+      one: '1 change on this device hasn\'t been uploaded yet.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get syncUploadThenResync => 'Upload first, then re-sync';
+
+  @override
+  String get syncDiscardAndResync => 'Discard my changes';
+
+  @override
+  String get syncDiscardConfirm =>
+      'Your un-uploaded changes will be lost permanently. Continue?';
+
+  @override
+  String syncResyncProgress(int count) {
+    return 'Downloading… $count records';
+  }
+
+  @override
+  String get syncResyncDone => 'Re-sync complete';
+
+  @override
+  String get syncResyncFailed =>
+      'Re-sync failed. Your current data is unchanged.';
+
+  @override
+  String get syncClearFailed => 'Dismiss rejected changes';
+
+  @override
+  String syncSignOutPending(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count changes haven\'t been uploaded. Signing out now will delete them from this device.',
+      one:
+          '1 change hasn\'t been uploaded. Signing out now will delete it from this device.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get syncSignOutAnyway => 'Sign out anyway';
+
+  @override
+  String get billingShop => 'Billing shop';
+
+  @override
+  String orderPlacedWithToken(String token, String amount) {
+    return 'Token $token · order placed (₹$amount)';
+  }
+
+  @override
+  String get navDashboard => 'Dashboard';
+
+  @override
+  String get navMore => 'More';
+
+  @override
+  String get navLedger => 'Ledger';
+
+  @override
+  String get navAudit => 'Audit log';
+
+  @override
+  String get navNewOrder => 'New order';
+
+  @override
+  String get shopFilterAll => 'All shops';
+
+  @override
+  String get shopFilterTooltip => 'Filter by shop';
+
+  @override
+  String get auditComingSoonTitle => 'Audit log is coming soon';
+
+  @override
+  String get auditComingSoonBody =>
+      'Every change made across your shops will be listed here. This will be available online only.';
+
+  @override
+  String get moreAccountSection => 'Account';
+
+  @override
+  String get moreManageSection => 'Manage';
+
+  @override
+  String get orderNewTitle => 'New order';
+
+  @override
+  String get orderShopLabel => 'Shop';
+
+  @override
+  String get orderShopRequired => 'Select a shop';
+
+  @override
+  String get orderSearchItems => 'Search and add an item';
+
+  @override
+  String get orderNoMenuItems => 'No menu items available';
+
+  @override
+  String get orderDeliveryDate => 'Delivery date';
+
+  @override
+  String get orderCustomerName => 'Customer name';
+
+  @override
+  String get orderCustomerPhone => 'Phone number';
+
+  @override
+  String get orderWalkInCustomer => 'Walk-in customer';
+
+  @override
+  String get orderDiscount => 'Discount';
+
+  @override
+  String get orderDiscountNone => 'None';
+
+  @override
+  String get orderDiscountPercent => '%';
+
+  @override
+  String get orderDiscountFlat => '₹ Flat';
+
+  @override
+  String get orderDiscountInvalid => 'Enter a valid discount';
+
+  @override
+  String orderItemsSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+      zero: 'No items added',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get orderAddItemsFirst => 'Add at least one item';
+
+  @override
+  String get orderPlace => 'Place order';
+
+  @override
+  String get orderSetQuantity => 'Set quantity';
+
+  @override
+  String get orderQuantity => 'Quantity';
+
+  @override
+  String get menuReadOnly => 'View only';
+
+  @override
+  String get statusPlaced => 'Placed';
+
+  @override
+  String get statusPreparing => 'Preparing';
+
+  @override
+  String get statusReady => 'Ready';
+
+  @override
+  String get statusDelivering => 'Delivering';
+
+  @override
+  String get statusDelivered => 'Delivered';
+
+  @override
+  String get statusReturned => 'Returned';
+
+  @override
+  String get orderItemsInOrder => 'Items in order';
+
+  @override
+  String get orderNoLinesYet => 'No items yet. Search above to add items.';
+
+  @override
+  String orderDeliveryOn(String date) {
+    return 'Delivery · $date';
+  }
+
+  @override
+  String get orderAddForAnotherDate => 'Add for another date';
+
+  @override
+  String get orderChangeDate => 'Change date';
+
+  @override
+  String get orderRemoveItem => 'Remove';
+
+  @override
+  String get orderDeliveryStatus => 'Delivery status';
+
+  @override
+  String get orderOverallStatus => 'Overall status';
+
+  @override
+  String get orderStatusPerDateHint =>
+      'Each delivery date has its own status — set it on the date below.';
+
+  @override
+  String get orderMarkAll => 'Set all dates to';
+
+  @override
+  String orderLineCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get orderDuplicate => 'Duplicate';
+
+  @override
+  String get orderMergeDuplicates => 'Merge into one row';
+
+  @override
+  String get orderDefaultDateHint =>
+      'Default date for new items — change any row\'s date with its date button';
+
+  @override
+  String get homeItemsToBuildTodayDesc =>
+      'Total unique items to build for today';
 }

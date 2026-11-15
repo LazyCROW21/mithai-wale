@@ -3,51 +3,64 @@
 ///
 /// ### Architecture
 /// ```
-/// appRouter  (GoRouter)
-///   ├── /                       → HomePage
-///   ├── /shop                   → ShopPage
-///   ├── /orders                 → OrdersPage
-///   ├── /reports                → ReportsPage
-///   ├── /profile                → ProfilePage
-///   ├── /settings               → SettingsPage
-///   ├── /product/:id/sheet      → ProductDetailSheet  (ModalBottomSheetPage)
-///   ├── /cart/add/sheet         → AddToCartSheet      (ModalBottomSheetPage)
-///   └── /logout/dialog          → ConfirmLogoutDialog (AppDialogPage)
+/// appRouter  (GoRouter)   initial: /   redirect: _authRedirect
+///   ├── /login                  → LoginPage            (public)
+///   ├── ShellRoute              → AppShell (bottom bar on mobile/tablet, side bar on desktop)
+///   │   ├── /                   → HomePage (dashboard)  shop filter for franchise admin
+///   │   ├── /menu               → MenuPage              read-only for employees
+///   │   ├── /orders             → OrdersPage            shop filter for franchise admin
+///   │   ├── /ledger             → LedgerPage            shop filter for franchise admin
+///   │   ├── /inventory          → InventoryPage         shop filter for franchise admin
+///   │   ├── /shops              → ShopsPage             franchise admin
+///   │   ├── /staff              → StaffPage             franchise admin
+///   │   ├── /audit              → AuditPage             franchise admin (placeholder)
+///   │   ├── /profile            → ProfilePage
+///   │   ├── /settings           → SettingsPage
+///   │   └── /more               → MorePage              mobile/tablet hub
+///   ├── /product/:id/sheet      → ProductDetailSheet   (ModalBottomSheetPage)
+///   ├── /orders/new/dialog      → CreateOrderDialog    (AppDialogPage)
+///   └── /logout/dialog          → ConfirmLogoutDialog  (AppDialogPage)
 /// ```
 ///
 /// ### Adding a new screen
 /// 1. Add path + name constants to [AppRoutes] / [AppRouteNames] in routes.dart
-/// 2. Add a [GoRoute] entry below
-/// 3. Use `AppNav.go(AppRoutes.myRoute)` to navigate
+/// 2. Add a [GoRoute] inside the [ShellRoute] below
+/// 3. Add it to `appDestinations` so it shows in the side bar / "More"
+/// 4. Use `AppNav.go(AppRoutes.myRoute)` to navigate
 ///
 /// ### Adding a modal bottom sheet
-/// Use [ModalBottomSheetPage] as the `pageBuilder` return value.
+/// Use [ModalBottomSheetPage] as the `pageBuilder` return value, outside the
+/// shell with `parentNavigatorKey: rootNavigatorKey`.
 /// The route path **must** end with `/sheet` (convention).
 ///
 /// ### Adding a dialog
-/// Use [AppDialogPage] as the `pageBuilder` return value.
+/// Use [AppDialogPage] as the `pageBuilder` return value, outside the shell
+/// with `parentNavigatorKey: rootNavigatorKey`.
 /// The route path **must** end with `/dialog` (convention).
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_models.dart';
 import '../../core/auth/auth_notifier.dart';
-import '../../core/layout/layout_extensions.dart';
+import '../../core/sync/sync_engine.dart';
+import '../../features/audit/audit_page.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/inventory/inventory_page.dart';
 import '../../features/shops/shops_page.dart';
 import '../../features/staff/staff_page.dart';
 import '../../l10n/l10n.dart';
-import '../../features/cart/widgets/cart_summary_sheet.dart';
 import '../../features/home/home_page.dart';
 import '../../features/ledger/ledger_page.dart';
 import '../../features/menu/menu_page.dart';
+import '../../features/more/more_page.dart';
 import '../../features/orders/orders_page.dart';
+import '../../features/orders/widgets/create_order_dialog.dart';
 import '../../features/profile/profile_page.dart';
 import '../../features/settings/settings_page.dart';
-import '../../features/shop/shop_page.dart';
+import '../widgets/app_shell.dart';
 import 'router_key.dart';
 import 'routes.dart';
 
@@ -132,20 +145,24 @@ class _AuthRefresh extends ChangeNotifier {
   }
 }
 
-/// Feature permission required to open a location (null = no extra requirement).
-Permission? _permissionFor(String location) {
-  if (location == AppRoutes.home) return Permission.home;
-  if (location.startsWith(AppRoutes.shops)) return Permission.shops;
-  if (location.startsWith(AppRoutes.staff)) return Permission.staff;
-  if (location.startsWith(AppRoutes.inventory)) return Permission.inventory;
-  if (location.startsWith(AppRoutes.shop)) return Permission.shop;
-  if (location.startsWith(AppRoutes.orders)) return Permission.orders;
-  if (location.startsWith(AppRoutes.menu)) return Permission.menu;
-  if (location.startsWith(AppRoutes.ledger)) return Permission.ledger;
-  if (location.startsWith(AppRoutes.profile)) return Permission.profile;
-  if (location.startsWith(AppRoutes.settings)) return Permission.settings;
-  if (location.startsWith('/product') || location.startsWith('/cart')) return Permission.shop;
-  return null;
+/// Whether [session] may open [location]. Sheets/dialogs follow the screen
+/// they belong to; `/more` and `/logout/dialog` are open to any signed-in user.
+bool _canOpen(AuthSession session, String location) {
+  if (location.startsWith(AppRoutes.audit)) return session.isFranchiseAdmin;
+  if (location.startsWith('/product')) return session.can(Permission.menu);
+  final needed = switch (location) {
+    AppRoutes.home => Permission.home,
+    _ when location.startsWith(AppRoutes.shops) => Permission.shops,
+    _ when location.startsWith(AppRoutes.staff) => Permission.staff,
+    _ when location.startsWith(AppRoutes.inventory) => Permission.inventory,
+    _ when location.startsWith(AppRoutes.orders) => Permission.orders,
+    _ when location.startsWith(AppRoutes.menu) => Permission.menu,
+    _ when location.startsWith(AppRoutes.ledger) => Permission.ledger,
+    _ when location.startsWith(AppRoutes.profile) => Permission.profile,
+    _ when location.startsWith(AppRoutes.settings) => Permission.settings,
+    _ => null,
+  };
+  return needed == null || session.can(needed);
 }
 
 String? _authRedirect(BuildContext context, GoRouterState state) {
@@ -154,11 +171,21 @@ String? _authRedirect(BuildContext context, GoRouterState state) {
   if (auth.status != AuthStatus.signedIn) {
     return loc == AppRoutes.login ? null : AppRoutes.login;
   }
-  if (loc == AppRoutes.login) return AppRoutes.home;
-  final needed = _permissionFor(loc);
-  if (needed != null && !auth.session!.can(needed)) return AppRoutes.home;
+  final session = auth.session!;
+  // Landing screen: the dashboard, or "More" if the dashboard is not allowed
+  // (never redirect to a location that would itself be refused, so no loops).
+  final landing = _canOpen(session, AppRoutes.home) ? AppRoutes.home : AppRoutes.more;
+  if (loc == AppRoutes.login) return landing;
+  if (!_canOpen(session, loc)) return loc == landing ? null : landing;
   return null;
 }
+
+/// A shell screen; switching between them is instant (no push animation).
+GoRoute _screen(String path, String name, Widget page) => GoRoute(
+      path: path,
+      name: name,
+      pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, name: name, child: page),
+    );
 
 // ── Router Instance ───────────────────────────────────────────────────────────
 
@@ -177,60 +204,28 @@ final GoRouter appRouter = GoRouter(
       name: AppRouteNames.login,
       builder: (context, state) => const LoginPage(),
     ),
-    GoRoute(
-      path: AppRoutes.shops,
-      name: AppRouteNames.shops,
-      builder: (context, state) => const ShopsPage(),
-    ),
-    GoRoute(
-      path: AppRoutes.staff,
-      name: AppRouteNames.staff,
-      builder: (context, state) => const StaffPage(),
-    ),
-    GoRoute(
-      path: AppRoutes.inventory,
-      name: AppRouteNames.inventory,
-      builder: (context, state) => const InventoryPage(),
-    ),
-    // ── Screens ──────────────────────────────────────────────────────────────
-    GoRoute(
-      path: AppRoutes.home,
-      name: AppRouteNames.home,
-      builder: (context, state) => const HomePage(),
-    ),
-    GoRoute(
-      path: AppRoutes.shop,
-      name: AppRouteNames.shop,
-      builder: (context, state) => const ShopPage(),
-    ),
-    GoRoute(
-      path: AppRoutes.orders,
-      name: AppRouteNames.orders,
-      builder: (context, state) => const OrdersPage(),
-    ),
-    GoRoute(
-      path: AppRoutes.profile,
-      name: AppRouteNames.profile,
-      builder: (context, state) => const ProfilePage(),
-    ),
-    GoRoute(
-      path: AppRoutes.settings,
-      name: AppRouteNames.settings,
-      builder: (context, state) => const SettingsPage(),
-    ),
-    GoRoute(
-      path: AppRoutes.menu,
-      name: AppRouteNames.menu,
-      builder: (context, state) => const MenuPage(),
-    ),
-    GoRoute(
-      path: AppRoutes.ledger,
-      name: AppRouteNames.ledger,
-      builder: (context, state) => const LedgerPage(),
+
+    // ── Screens (inside the persistent nav shell) ────────────────────────────
+    ShellRoute(
+      builder: (context, state, child) => AppShell(location: state.matchedLocation, child: child),
+      routes: [
+        _screen(AppRoutes.home, AppRouteNames.home, const HomePage()),
+        _screen(AppRoutes.menu, AppRouteNames.menu, const MenuPage()),
+        _screen(AppRoutes.orders, AppRouteNames.orders, const OrdersPage()),
+        _screen(AppRoutes.ledger, AppRouteNames.ledger, const LedgerPage()),
+        _screen(AppRoutes.inventory, AppRouteNames.inventory, const InventoryPage()),
+        _screen(AppRoutes.shops, AppRouteNames.shops, const ShopsPage()),
+        _screen(AppRoutes.staff, AppRouteNames.staff, const StaffPage()),
+        _screen(AppRoutes.audit, AppRouteNames.audit, const AuditPage()),
+        _screen(AppRoutes.profile, AppRouteNames.profile, const ProfilePage()),
+        _screen(AppRoutes.settings, AppRouteNames.settings, const SettingsPage()),
+        _screen(AppRoutes.more, AppRouteNames.more, const MorePage()),
+      ],
     ),
 
     // ── Modal Bottom Sheets ───────────────────────────────────────────────────
     GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
       path: AppRoutes.productDetail,
       name: AppRouteNames.productDetail,
       pageBuilder: (context, state) => ModalBottomSheetPage(
@@ -241,28 +236,21 @@ final GoRouter appRouter = GoRouter(
         ),
       ),
     ),
-    GoRoute(
-      path: AppRoutes.addToCart,
-      name: AppRouteNames.addToCart,
-      pageBuilder: (context, state) {
-        if (context.isMobile) {
-          return MaterialPage(
-            key: state.pageKey,
-            name: state.name,
-            child: const CartSummarySheet(),
-          );
-        }
-        return ModalBottomSheetPage(
-          key: state.pageKey,
-          name: state.name,
-          constraints: const BoxConstraints(maxWidth: 960),
-          child: const CartSummarySheet(),
-        );
-      },
-    ),
 
     // ── Dialogs ───────────────────────────────────────────────────────────────
     GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: AppRoutes.createOrder,
+      name: AppRouteNames.createOrder,
+      pageBuilder: (context, state) => AppDialogPage(
+        key: state.pageKey,
+        name: state.name,
+        barrierDismissible: false,
+        child: const CreateOrderDialog(),
+      ),
+    ),
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
       path: AppRoutes.confirmLogout,
       name: AppRouteNames.confirmLogout,
       pageBuilder: (context, state) => AppDialogPage(
@@ -338,25 +326,51 @@ class _ProductDetailSheet extends StatelessWidget {
 }
 
 
-class _ConfirmLogoutDialog extends StatelessWidget {
+class _ConfirmLogoutDialog extends ConsumerWidget {
   const _ConfirmLogoutDialog();
 
+  Future<void> _signOut() async {
+    AppNav.pop();
+    // Explicit sign-out wipes this user's local data; the router then
+    // redirects to /login once the auth state flips.
+    await syncEngine.stopAndWipe();
+    await appAuth.signOut();
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final sync = ref.watch(syncStatusProvider);
+    final pending = sync.pending;
+    final cs = Theme.of(context).colorScheme;
+
     return AlertDialog(
       title: Text(l10n.authSignOutTitle),
-      content: Text(l10n.authSignOutMessage),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.authSignOutMessage),
+          if (pending > 0) ...[
+            const SizedBox(height: 12),
+            Text(l10n.syncSignOutPending(pending), style: TextStyle(color: cs.error)),
+          ],
+        ],
+      ),
       actions: [
         TextButton(onPressed: AppNav.pop, child: Text(l10n.actionCancel)),
-        FilledButton(
-          onPressed: () {
-            AppNav.pop();
-            // The router redirects to /login once the state flips.
-            appAuth.signOut();
-          },
-          child: Text(l10n.actionSignOut),
-        ),
+        if (pending > 0) ...[
+          OutlinedButton(
+            onPressed: sync.isBusy ? null : syncEngine.syncNow,
+            child: Text(l10n.syncNow),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: cs.error),
+            onPressed: _signOut,
+            child: Text(l10n.syncSignOutAnyway),
+          ),
+        ] else
+          FilledButton(onPressed: _signOut, child: Text(l10n.actionSignOut)),
       ],
     );
   }

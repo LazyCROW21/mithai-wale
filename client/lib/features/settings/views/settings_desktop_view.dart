@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/auth/auth_models.dart';
+import '../../../core/auth/auth_notifier.dart';
 import '../../../core/routing/router_key.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/state/app_state_providers.dart';
 import '../../../l10n/l10n.dart';
 import '../../menu/widgets/manage_categories_dialog.dart';
 import '../widgets/language_selector_card.dart';
+import '../widgets/sync_card.dart';
 
 class SettingsDesktopView extends ConsumerWidget {
   const SettingsDesktopView({super.key});
@@ -14,55 +17,16 @@ class SettingsDesktopView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final canEditCatalog = ref.watch(sessionProvider).role != AppRole.employee;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final themeModeAsync = ref.watch(themeModeProvider);
     final themeMode = themeModeAsync.valueOrNull ?? ThemeMode.system;
 
-    final navItems = [
-      (icon: Icons.home_outlined, selectedIcon: Icons.home, label: l10n.navHome, route: AppRoutes.home),
-      (icon: Icons.store_outlined, selectedIcon: Icons.store, label: l10n.navShop, route: AppRoutes.shop),
-      (icon: Icons.restaurant_menu_outlined, selectedIcon: Icons.restaurant_menu, label: l10n.navMenu, route: AppRoutes.menu),
-      (icon: Icons.receipt_long_outlined, selectedIcon: Icons.receipt_long, label: l10n.navOrders, route: AppRoutes.orders),
-      (icon: Icons.person_outline, selectedIcon: Icons.person, label: l10n.navProfile, route: AppRoutes.profile),
-      (icon: Icons.settings, selectedIcon: Icons.settings, label: l10n.navSettings, route: AppRoutes.settings),
-    ];
 
     return Scaffold(
       body: Row(
         children: [
-          NavigationDrawer(
-            selectedIndex: 5, // Settings index
-            onDestinationSelected: (i) => AppNav.go(navItems[i].route),
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(28, 24, 16, 10),
-                child: Text(
-                  l10n.appName,
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: cs.primary),
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 28, vertical: 4),
-                child: Text('MANAGEMENT', style: TextStyle(fontSize: 11, letterSpacing: 1.4)),
-              ),
-              ...navItems.map(
-                (item) => NavigationDrawerDestination(
-                  icon: Icon(item.icon),
-                  selectedIcon: Icon(item.selectedIcon),
-                  label: Text(item.label),
-                ),
-              ),
-              const Divider(indent: 28, endIndent: 28),
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 28),
-                leading: const Icon(Icons.logout_outlined),
-                title: Text(l10n.actionSignOut),
-                onTap: () => AppNav.push(AppRoutes.confirmLogout),
-              ),
-            ],
-          ),
-          const VerticalDivider(width: 1),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,8 +50,12 @@ class SettingsDesktopView extends ConsumerWidget {
                       const SizedBox(height: 12),
                       const LanguageSelectorCard(),
                       const SizedBox(height: 32),
+                      const SyncCard(),
+                      const SizedBox(height: 32),
 
                       // Menu Management Banner
+                      // Employees can view the menu but not manage the catalog.
+                      if (canEditCatalog)
                       Card(
                         color: cs.primaryContainer.withAlpha(80),
                         elevation: 1,

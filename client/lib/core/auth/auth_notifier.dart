@@ -94,6 +94,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = AuthState.signedIn(AuthSession.fromJson(j));
   }
 
+  /// Re-fetches the session (e.g. after the franchise admin adds a shop).
+  Future<void> refreshSession() async {
+    if (state.status != AuthStatus.signedIn) return;
+    try {
+      final j = await api.get('/auth/me') as Map<String, dynamic>;
+      await _box!.put(_sessionKey, jsonEncode(j));
+      state = AuthState.signedIn(AuthSession.fromJson(j));
+    } on ApiException catch (e) {
+      debugPrint('Session refresh failed: $e');
+    }
+  }
+
   Future<void> signOut({bool callServer = true}) async {
     final refresh = _tokens?.refreshToken;
     if (callServer && refresh != null) {

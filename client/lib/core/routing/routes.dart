@@ -19,7 +19,6 @@ library;
 abstract final class AppRoutes {
   // ── Top-level screens ─────────────────────────────────────────────────────
   static const home = '/';
-  static const shop = '/shop';
   static const orders = '/orders';
   static const profile = '/profile';
   static const settings = '/settings';
@@ -29,6 +28,10 @@ abstract final class AppRoutes {
   static const shops = '/shops';
   static const staff = '/staff';
   static const inventory = '/inventory';
+  static const audit = '/audit';
+
+  /// Mobile/tablet hub listing every screen not on the bottom bar.
+  static const more = '/more';
 
   // ── Modal bottom sheets ───────────────────────────────────────────────────
   /// Path template — use [productDetailPath] to generate the concrete path.
@@ -37,17 +40,17 @@ abstract final class AppRoutes {
   /// Generates the concrete product-detail sheet path for [id].
   static String productDetailPath(String id) => '/product/$id/sheet';
 
-  static const addToCart = '/cart/add/sheet';
-
   // ── Dialogs ───────────────────────────────────────────────────────────────
   static const confirmLogout = '/logout/dialog';
+
+  /// Counter order entry (replaces the old shop + cart flow).
+  static const createOrder = '/orders/new/dialog';
 }
 
 /// Route name constants (used with [GoRouter.pushNamed]).
 abstract final class AppRouteNames {
   // Screens
   static const home = 'home';
-  static const shop = 'shop';
   static const orders = 'orders';
   static const profile = 'profile';
   static const settings = 'settings';
@@ -57,9 +60,11 @@ abstract final class AppRouteNames {
   static const shops = 'shops';
   static const staff = 'staff';
   static const inventory = 'inventory';
+  static const audit = 'audit';
+  static const more = 'more';
 
   // Modals
   static const productDetail = 'product-detail';
-  static const addToCart = 'add-to-cart';
   static const confirmLogout = 'confirm-logout';
+  static const createOrder = 'create-order';
 }

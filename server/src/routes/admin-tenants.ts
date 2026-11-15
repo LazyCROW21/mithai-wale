@@ -62,6 +62,7 @@ export const adminTenantsRouter = new Hono<AppEnv>()
       shopIds: [],
       active: true,
       createdAt: new Date(),
+      updatedAt: new Date(),
     };
     try {
       await users().insertOne(owner);

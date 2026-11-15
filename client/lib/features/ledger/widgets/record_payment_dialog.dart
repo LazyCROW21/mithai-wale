@@ -1,8 +1,12 @@
+import '../../../core/sync/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/auth/auth_notifier.dart';
 import '../../../core/database/models/payment_model.dart';
+import '../../../core/state/shop_filter.dart';
+import '../../orders/orders_providers.dart';
 import '../ledger_providers.dart';
 
 /// Opens the Record Payment / Refund dialog.
@@ -53,6 +57,11 @@ class _RecordPaymentDialogState extends ConsumerState<RecordPaymentDialog> {
 
   late PaymentType _type;
   String _paymentMode = 'Cash';
+
+  /// Shop the entry is recorded for. Franchise admin: pre-filled from the
+  /// order (when known) or the global shop filter, otherwise must be chosen.
+  /// Store-scoped users: always their own shop.
+  String? _shopId;
   bool _isSaving = false;
 
   static const _modes = ['Cash', 'UPI', 'Card', 'Net Banking', 'Cheque', 'Other'];
@@ -72,6 +81,15 @@ class _RecordPaymentDialogState extends ConsumerState<RecordPaymentDialog> {
       text: _type == PaymentType.credit ? 'Payment received' : 'Refund returned',
     );
     _referenceController = TextEditingController();
+    final orderShop = widget.orderId == null
+        ? null
+        : ref
+            .read(ordersViewModelProvider)
+            .allOrders
+            .where((o) => o.id == widget.orderId)
+            .firstOrNull
+            ?.shopId;
+    _shopId = orderShop ?? ref.read(defaultShopIdProvider);
   }
 
   @override
@@ -99,7 +117,7 @@ class _RecordPaymentDialogState extends ConsumerState<RecordPaymentDialog> {
 
     try {
       final payment = PaymentModel(
-        id: 'PAY-${DateTime.now().millisecondsSinceEpoch}',
+        id: 'PAY-${randomId(12).toUpperCase()}',
         orderId: _orderIdController.text.trim(),
         amount: amount,
         type: _type,
@@ -112,6 +130,7 @@ class _RecordPaymentDialogState extends ConsumerState<RecordPaymentDialog> {
             ? null
             : _referenceController.text.trim(),
         createdAt: DateTime.now(),
+        shopId: _shopId,
       );
 
       await ref.read(ledgerViewModelProvider.notifier).addPayment(payment);
@@ -190,6 +209,11 @@ class _RecordPaymentDialogState extends ConsumerState<RecordPaymentDialog> {
                   ],
                 ),
                 const SizedBox(height: 20),
+
+                // Shop (franchise admin only; required when no shop filter is set)
+                ShopPickerField(value: _shopId, onChanged: (v) => setState(() => _shopId = v)),
+                if (ref.watch(authProvider.select((a) => a.session?.isFranchiseAdmin ?? false)))
+                  const SizedBox(height: 16),
 
                 // Transaction Type Selector (Credit vs Debit)
                 SegmentedButton<PaymentType>(
