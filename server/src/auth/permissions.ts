@@ -21,14 +21,14 @@ export type Permission =
   | "orders"
   | "ledger" // bill collection
   | "inventory"
-  | "shops" // manage shops
+  | "shops" // owner: manage shops; manager: print setup of own shop
   | "staff" // manage staff credentials
   | "profile"
   | "settings";
 
 export const rolePermissions: Record<Role, readonly Permission[]> = {
   owner: ["home", "shop", "menu", "orders", "ledger", "inventory", "shops", "staff", "profile", "settings"],
-  manager: ["home", "shop", "menu", "orders", "ledger", "inventory", "profile", "settings"],
+  manager: ["home", "shop", "menu", "orders", "ledger", "inventory", "shops", "profile", "settings"],
   employee: ["home", "shop", "menu", "orders", "ledger", "inventory", "profile", "settings"],
 };
 

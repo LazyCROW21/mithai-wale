@@ -9,6 +9,7 @@ import '../home_providers.dart';
 import '../widgets/home_kpi_card.dart';
 import '../widgets/menu_items_to_build_card.dart';
 import '../widgets/order_highlight_section.dart';
+import '../../../core/widgets/refresh_button.dart';
 
 class HomeMobileView extends ConsumerWidget {
   const HomeMobileView({super.key});
@@ -43,9 +44,7 @@ class HomeMobileView extends ConsumerWidget {
         actions: [
           const ShopFilterButton(),
           const AccountMenuButton(),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
+          RefreshButton(
             onPressed: () => ref.read(homeViewModelProvider.notifier).refreshDashboard(),
           ),
         ],

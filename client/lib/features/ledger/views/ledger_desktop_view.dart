@@ -6,6 +6,7 @@ import '../ledger_providers.dart';
 import '../widgets/ledger_filter_toolbar.dart';
 import '../widgets/ledger_metric_cards.dart';
 import '../widgets/payment_record_card.dart';
+import '../../../core/widgets/refresh_button.dart';
 
 class LedgerDesktopView extends ConsumerWidget {
   const LedgerDesktopView({super.key});
@@ -29,11 +30,7 @@ class LedgerDesktopView extends ConsumerWidget {
                 title: const Text('Payment Ledger', style: TextStyle(fontWeight: FontWeight.bold)),
                 actions: [
                   const ShopFilterButton(),
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    tooltip: 'Refresh Ledger',
-                    onPressed: () => vm.loadPayments(),
-                  ),
+                  RefreshButton(onPressed: () => vm.loadPayments()),
                   const SizedBox(width: 8),
                 ],
               ),

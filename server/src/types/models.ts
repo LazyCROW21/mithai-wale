@@ -52,6 +52,30 @@ export interface Shop extends TenantDoc {
   active: boolean;
 }
 
+/** Page setup and letterhead used when printing bills and other documents. */
+export interface PrintProfile {
+  pageSize: "a4" | "a5" | "letter" | "custom";
+  pageWidthMm: number;
+  pageHeightMm: number;
+  /** Printing area: content never prints outside these margins. */
+  marginTopMm: number;
+  marginBottomMm: number;
+  marginLeftMm: number;
+  marginRightMm: number;
+  /** Base64 image drawn in the top margin when the letterhead is included. */
+  headerImage?: string | null;
+  /** Base64 image drawn in the bottom margin when the letterhead is included. */
+  footerImage?: string | null;
+}
+
+/** Stored print profile: the franchise default (`shopId: null`) or one shop's override. */
+export interface PrintProfileDoc extends PrintProfile {
+  _id: string; // `${tenantId}:franchise` or `${tenantId}:shop:${shopId}`
+  tenantId: string;
+  shopId: string | null;
+  updatedAt: Date;
+}
+
 /** A device registered to a tenant. `code` prefixes daily order tokens (A-12). */
 export interface Device {
   _id: string; // `${tenantId}:${deviceId}`

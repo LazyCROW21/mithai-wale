@@ -19,7 +19,12 @@ library;
 
 import 'package:get_it/get_it.dart';
 
+import '../../features/orders/printing/order_print_service.dart';
+import '../auth/auth_notifier.dart';
 import '../database/db_provider.dart';
+import '../printing/document_output.dart';
+import '../printing/pdf_renderer.dart';
+import '../printing/print_profile_repository.dart';
 import '../sync/sync_store.dart';
 import '../database/repositories/category_repository.dart';
 import '../database/repositories/menu_repository.dart';
@@ -55,6 +60,20 @@ Future<void> setupServiceLocator() async {
     () => DatabaseProvider.instance.inventory,
   );
   sl.registerLazySingleton<SyncStore>(() => DatabaseProvider.instance.sync);
+
+  // ── Printing ──────────────────────────────────────────────────────────────
+  sl.registerLazySingleton<IPrintProfileRepository>(
+    () => ApiPrintProfileRepository(appAuth.api, () => appAuth.current.session?.ownerKey),
+  );
+  sl.registerLazySingleton<PdfRenderer>(() => PdfRenderer());
+  sl.registerLazySingleton<IDocumentOutput>(() => const PrintingDocumentOutput());
+  sl.registerLazySingleton<OrderPrintService>(
+    () => OrderPrintService(
+      payments: sl<IPaymentsRepository>(),
+      profiles: sl<IPrintProfileRepository>(),
+      session: () => appAuth.current.session,
+    ),
+  );
 
   // ── Services ──────────────────────────────────────────────────────────────
   // sl.registerLazySingleton<AuthService>(() => AuthService());

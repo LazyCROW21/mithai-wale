@@ -5,6 +5,7 @@ import '../../../core/state/shop_filter.dart';
 import '../orders_providers.dart';
 import '../widgets/order_card.dart';
 import '../widgets/orders_filter_toolbar.dart';
+import '../../../core/widgets/refresh_button.dart';
 
 class OrdersTabletView extends ConsumerWidget {
   const OrdersTabletView({super.key});
@@ -41,11 +42,7 @@ class OrdersTabletView extends ConsumerWidget {
                       const Spacer(),
                       const ShopFilterButton(),
                       const SizedBox(width: 8),
-                      IconButton.outlined(
-                        onPressed: () => vm.loadOrders(),
-                        icon: const Icon(Icons.refresh, size: 18),
-                        tooltip: 'Refresh Orders',
-                      ),
+                      RefreshButton(onPressed: () => vm.loadOrders()),
                     ],
                   ),
                 ),

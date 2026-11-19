@@ -674,4 +674,117 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get homeItemsToBuildTodayDesc =>
       'Total unique items to build for today';
+
+  @override
+  String get actionRefresh => 'Refresh';
+
+  @override
+  String get actionPrint => 'Print';
+
+  @override
+  String get printBill => 'Bill (PDF)';
+
+  @override
+  String get printPreviewTitle => 'Print preview';
+
+  @override
+  String get printFormatPage => 'Page';
+
+  @override
+  String get printFormatThermal80 => 'Roll 80mm';
+
+  @override
+  String get printFormatThermal58 => 'Roll 58mm';
+
+  @override
+  String get printLetterhead => 'Letterhead';
+
+  @override
+  String get printLetterheadHint =>
+      'The header image is drawn in the top margin and the footer image in the bottom margin. Turn the letterhead off in the preview when printing on pre-printed paper.';
+
+  @override
+  String get printShareDownload => 'Share / Download';
+
+  @override
+  String get printFailed => 'Could not create the document. Please try again.';
+
+  @override
+  String get printSetup => 'Print setup';
+
+  @override
+  String get printSetupFranchise => 'Franchise print setup';
+
+  @override
+  String get printSetupFranchiseDesc =>
+      'Used by every shop that has no print setup of its own';
+
+  @override
+  String get printUsesFranchiseDefault => 'Uses franchise print setup';
+
+  @override
+  String get printUsesOwnSetup => 'Own print setup';
+
+  @override
+  String get printUseFranchiseDefault => 'Use franchise setup';
+
+  @override
+  String get printPageSize => 'Page size';
+
+  @override
+  String get printPageCustom => 'Custom size';
+
+  @override
+  String get printPageWidth => 'Width';
+
+  @override
+  String get printPageHeight => 'Height';
+
+  @override
+  String get printArea => 'Printing area';
+
+  @override
+  String get printAreaHint =>
+      'Margins from each edge of the page. Nothing from the document prints outside them.';
+
+  @override
+  String get printAreaTooSmall =>
+      'The margins leave no room to print. Reduce them or use a larger page.';
+
+  @override
+  String get printMarginTop => 'Top margin';
+
+  @override
+  String get printMarginBottom => 'Bottom margin';
+
+  @override
+  String get printMarginLeft => 'Left margin';
+
+  @override
+  String get printMarginRight => 'Right margin';
+
+  @override
+  String get printHeaderImage => 'Header image';
+
+  @override
+  String get printFooterImage => 'Footer image (optional)';
+
+  @override
+  String get printImageChoose => 'Choose image';
+
+  @override
+  String get printImageRemove => 'Remove';
+
+  @override
+  String get printImageTooLarge =>
+      'This image is too large. Choose a smaller one.';
+
+  @override
+  String get printInvalidNumber => 'Enter a valid number';
+
+  @override
+  String get printPreviewSample => 'Preview';
+
+  @override
+  String get printSetupSaved => 'Print setup saved';
 }

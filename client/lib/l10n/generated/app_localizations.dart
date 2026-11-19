@@ -1243,6 +1243,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Total unique items to build for today'**
   String get homeItemsToBuildTodayDesc;
+
+  /// No description provided for @actionRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get actionRefresh;
+
+  /// No description provided for @actionPrint.
+  ///
+  /// In en, this message translates to:
+  /// **'Print'**
+  String get actionPrint;
+
+  /// No description provided for @printBill.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill (PDF)'**
+  String get printBill;
+
+  /// No description provided for @printPreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Print preview'**
+  String get printPreviewTitle;
+
+  /// No description provided for @printFormatPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Page'**
+  String get printFormatPage;
+
+  /// No description provided for @printFormatThermal80.
+  ///
+  /// In en, this message translates to:
+  /// **'Roll 80mm'**
+  String get printFormatThermal80;
+
+  /// No description provided for @printFormatThermal58.
+  ///
+  /// In en, this message translates to:
+  /// **'Roll 58mm'**
+  String get printFormatThermal58;
+
+  /// No description provided for @printLetterhead.
+  ///
+  /// In en, this message translates to:
+  /// **'Letterhead'**
+  String get printLetterhead;
+
+  /// No description provided for @printLetterheadHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The header image is drawn in the top margin and the footer image in the bottom margin. Turn the letterhead off in the preview when printing on pre-printed paper.'**
+  String get printLetterheadHint;
+
+  /// No description provided for @printShareDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Share / Download'**
+  String get printShareDownload;
+
+  /// No description provided for @printFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create the document. Please try again.'**
+  String get printFailed;
+
+  /// No description provided for @printSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Print setup'**
+  String get printSetup;
+
+  /// No description provided for @printSetupFranchise.
+  ///
+  /// In en, this message translates to:
+  /// **'Franchise print setup'**
+  String get printSetupFranchise;
+
+  /// No description provided for @printSetupFranchiseDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Used by every shop that has no print setup of its own'**
+  String get printSetupFranchiseDesc;
+
+  /// No description provided for @printUsesFranchiseDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses franchise print setup'**
+  String get printUsesFranchiseDefault;
+
+  /// No description provided for @printUsesOwnSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Own print setup'**
+  String get printUsesOwnSetup;
+
+  /// No description provided for @printUseFranchiseDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Use franchise setup'**
+  String get printUseFranchiseDefault;
+
+  /// No description provided for @printPageSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Page size'**
+  String get printPageSize;
+
+  /// No description provided for @printPageCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom size'**
+  String get printPageCustom;
+
+  /// No description provided for @printPageWidth.
+  ///
+  /// In en, this message translates to:
+  /// **'Width'**
+  String get printPageWidth;
+
+  /// No description provided for @printPageHeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Height'**
+  String get printPageHeight;
+
+  /// No description provided for @printArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Printing area'**
+  String get printArea;
+
+  /// No description provided for @printAreaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Margins from each edge of the page. Nothing from the document prints outside them.'**
+  String get printAreaHint;
+
+  /// No description provided for @printAreaTooSmall.
+  ///
+  /// In en, this message translates to:
+  /// **'The margins leave no room to print. Reduce them or use a larger page.'**
+  String get printAreaTooSmall;
+
+  /// No description provided for @printMarginTop.
+  ///
+  /// In en, this message translates to:
+  /// **'Top margin'**
+  String get printMarginTop;
+
+  /// No description provided for @printMarginBottom.
+  ///
+  /// In en, this message translates to:
+  /// **'Bottom margin'**
+  String get printMarginBottom;
+
+  /// No description provided for @printMarginLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Left margin'**
+  String get printMarginLeft;
+
+  /// No description provided for @printMarginRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Right margin'**
+  String get printMarginRight;
+
+  /// No description provided for @printHeaderImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Header image'**
+  String get printHeaderImage;
+
+  /// No description provided for @printFooterImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Footer image (optional)'**
+  String get printFooterImage;
+
+  /// No description provided for @printImageChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose image'**
+  String get printImageChoose;
+
+  /// No description provided for @printImageRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get printImageRemove;
+
+  /// No description provided for @printImageTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'This image is too large. Choose a smaller one.'**
+  String get printImageTooLarge;
+
+  /// No description provided for @printInvalidNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid number'**
+  String get printInvalidNumber;
+
+  /// No description provided for @printPreviewSample.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get printPreviewSample;
+
+  /// No description provided for @printSetupSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Print setup saved'**
+  String get printSetupSaved;
 }
 
 class _AppLocalizationsDelegate

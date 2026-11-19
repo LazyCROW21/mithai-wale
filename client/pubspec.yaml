@@ -34,6 +34,8 @@ dependencies:
   share_plus: ^13.3.0
   image_picker: ^1.2.3
   image: ^4.10.1
+  pdf: ^3.13.1
+  printing: ^5.15.1
 
 dev_dependencies:
   flutter_test:
@@ -44,3 +46,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+
+  # Fonts embedded in generated PDFs (rupee sign, offline printing).
+  assets:
+    - assets/fonts/

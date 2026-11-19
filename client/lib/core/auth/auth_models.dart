@@ -47,19 +47,37 @@ enum Permission {
 
 @immutable
 class ShopRef {
-  const ShopRef({required this.id, required this.name, required this.active});
+  const ShopRef({
+    required this.id,
+    required this.name,
+    required this.active,
+    this.address,
+    this.phone,
+  });
 
   final String id;
   final String name;
   final bool active;
 
+  /// Printed on bills (carried in the session so printing works offline).
+  final String? address;
+  final String? phone;
+
   factory ShopRef.fromJson(Map<String, dynamic> j) => ShopRef(
         id: j['id'] as String,
         name: j['name'] as String,
         active: j['active'] as bool? ?? true,
+        address: j['address'] as String?,
+        phone: j['phone'] as String?,
       );
 
-  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'active': active};
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'active': active,
+        'address': address,
+        'phone': phone,
+      };
 }
 
 /// Signed-in user, their franchise, permissions and shops.

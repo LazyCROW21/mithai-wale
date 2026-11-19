@@ -8,6 +8,7 @@ export const Collections = {
   counters: "counters",
   syncOps: "sync_ops",
   shops: "shops",
+  printProfiles: "print_profiles",
   categories: "categories",
   menuItems: "menu_items",
   shopMenuItems: "shop_menu_items",

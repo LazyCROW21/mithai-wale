@@ -6,6 +6,10 @@ import '../../ledger/ledger_providers.dart';
 import 'edit_order_modal.dart';
 import 'order_invoice_share.dart';
 import 'order_lines_editor.dart';
+import '../../../core/di/service_locator.dart';
+import '../../../core/printing/print_preview_page.dart';
+import '../../../l10n/l10n.dart';
+import '../printing/order_print_service.dart';
 
 /// A table-like long row card for displaying an order with basic info,
 /// payment collection status, and an expandable breakdown view.
@@ -86,6 +90,12 @@ class OrderCard extends ConsumerWidget {
     }
   }
 
+  /// Opens the bill preview (view, print, share or download the PDF).
+  Future<void> _openBill(BuildContext context) async {
+    final job = await sl<OrderPrintService>().bill(order);
+    if (context.mounted) await showPrintPreview(context, job);
+  }
+
   Widget _buildPopupMenu(BuildContext context) {
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_vert, size: 20),
@@ -95,6 +105,8 @@ class OrderCard extends ConsumerWidget {
           showEditOrderModal(context, order);
         } else if (action == 'share') {
           shareOrderInvoice(context, order);
+        } else if (action == 'bill') {
+          _openBill(context);
         }
       },
       itemBuilder: (context) => [
@@ -118,14 +130,13 @@ class OrderCard extends ConsumerWidget {
             ],
           ),
         ),
-        const PopupMenuItem(
-          value: 'print',
-          enabled: false,
+        PopupMenuItem(
+          value: 'bill',
           child: Row(
             children: [
-              Icon(Icons.print_outlined, size: 18, color: Colors.grey),
-              SizedBox(width: 10),
-              Text('Print (Disabled)', style: TextStyle(color: Colors.grey)),
+              const Icon(Icons.print_outlined, size: 18),
+              const SizedBox(width: 10),
+              Text(context.l10n.printBill),
             ],
           ),
         ),

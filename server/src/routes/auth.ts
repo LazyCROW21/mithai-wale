@@ -25,7 +25,14 @@ async function buildSession(user: User, tenant: Tenant) {
     tenant: { id: tenant._id, name: tenant.name, slug: tenant.slug },
     permissions: rolePermissions[user.role],
     // For store owners/employees this is their (fixed) shop list; owners get every shop.
-    shops: shops.map((s) => ({ id: s._id, name: s.name, active: s.active })),
+    // Address and phone are printed on bills, so they must be available offline.
+    shops: shops.map((s) => ({
+      id: s._id,
+      name: s.name,
+      active: s.active,
+      address: s.address ?? null,
+      phone: s.phone ?? null,
+    })),
   };
 }
 

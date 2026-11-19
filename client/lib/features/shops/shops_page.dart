@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/auth/auth_notifier.dart';
+import '../../core/di/service_locator.dart';
+import '../../core/printing/print_profile.dart';
+import '../../core/printing/print_profile_repository.dart';
 import '../../core/sync/sync_engine.dart';
 import '../../core/widgets/admin_scaffold.dart';
+import '../../core/widgets/refresh_button.dart';
 import '../../l10n/l10n.dart';
+import 'print_setup_page.dart';
 
 class Shop {
   const Shop({
@@ -35,7 +40,14 @@ final shopsProvider = FutureProvider.autoDispose<List<Shop>>((ref) async {
   return [for (final s in j.cast<Map<String, dynamic>>()) Shop.fromJson(s)];
 });
 
-/// Franchise admin: manage shops.
+/// Print setups (franchise default + per shop), always read fresh from the
+/// server because they are edited here.
+final printProfilesProvider = FutureProvider.autoDispose<PrintProfileSet>(
+  (ref) => sl<IPrintProfileRepository>().load(requireFresh: true),
+);
+
+/// Franchise admin: manage shops and every print setup.
+/// Store owner: the print setup of their own shop only.
 class ShopsPage extends ConsumerWidget {
   const ShopsPage({super.key});
 
@@ -121,45 +133,112 @@ class ShopsPage extends ConsumerWidget {
     }
   }
 
+  /// Opens print setup for [shop], or for the franchise default when null.
+  Future<void> _printSetup(BuildContext context, WidgetRef ref, [Shop? shop]) async {
+    final PrintProfileSet profiles;
+    try {
+      profiles = await ref.read(printProfilesProvider.future);
+    } catch (e) {
+      if (context.mounted) showApiError(context, e);
+      return;
+    }
+    if (!context.mounted) return;
+    final saved = await Navigator.of(context, rootNavigator: true).push<bool>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => PrintSetupPage(
+          shopId: shop?.id,
+          shopName: shop?.name,
+          own: shop == null ? profiles.franchise : profiles.shops[shop.id],
+          inherited: profiles.franchise ?? PrintProfile.standard,
+        ),
+      ),
+    );
+    if (saved == true) ref.invalidate(printProfilesProvider);
+  }
+
+  Widget _printSetupButton(BuildContext context, VoidCallback onPressed) => IconButton.filledTonal(
+        onPressed: onPressed,
+        tooltip: context.l10n.printSetup,
+        style: raisedIconButtonStyle(context),
+        icon: const Icon(Icons.print_outlined, size: 20),
+      );
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final shops = ref.watch(shopsProvider);
+    final profiles = ref.watch(printProfilesProvider).valueOrNull;
+    // Only the franchise admin manages shops; store owners get print setup only.
+    final isAdmin = ref.watch(sessionProvider).isFranchiseAdmin;
 
     return AdminScaffold(
       title: l10n.navShops,
       addLabel: l10n.shopAdd,
-      onAdd: () => _edit(context, ref),
+      onAdd: isAdmin ? () => _edit(context, ref) : null,
+      actions: [
+        RefreshButton(
+          busy: shops.isLoading,
+          onPressed: () {
+            ref.invalidate(shopsProvider);
+            ref.invalidate(printProfilesProvider);
+          },
+        ),
+        const SizedBox(width: 8),
+      ],
       body: shops.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorRetry(error: e, onRetry: () => ref.invalidate(shopsProvider)),
-        data: (list) => list.isEmpty
-            ? Center(child: Text(l10n.shopsEmpty))
-            : ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                itemCount: list.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 8),
-                itemBuilder: (_, i) {
-                  final s = list[i];
-                  return Card(
-                    elevation: 1,
-                    child: ListTile(
-                      leading: const Icon(Icons.storefront_outlined),
-                      title: Text(s.name),
-                      subtitle: Text([
-                        if (s.address != null) s.address!,
-                        if (s.phone != null) s.phone!,
-                        s.active ? l10n.statusActive : l10n.statusDisabled,
-                      ].join(' · ')),
-                      onTap: () => _edit(context, ref, s),
-                      trailing: Switch(
-                        value: s.active,
-                        onChanged: (_) => _toggle(context, ref, s),
-                      ),
-                    ),
-                  );
-                },
+        data: (list) => ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+          children: [
+            if (isAdmin)
+              Card(
+                elevation: 1,
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  leading: const Icon(Icons.description_outlined),
+                  title: Text(l10n.printSetupFranchise),
+                  subtitle: Text(l10n.printSetupFranchiseDesc),
+                  trailing: _printSetupButton(context, () => _printSetup(context, ref)),
+                ),
               ),
+            if (list.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 48),
+                child: Center(child: Text(l10n.shopsEmpty)),
+              ),
+            for (final s in list)
+              Card(
+                elevation: 1,
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  leading: const Icon(Icons.storefront_outlined),
+                  title: Text(s.name),
+                  subtitle: Text([
+                    if (s.address != null) s.address!,
+                    if (s.phone != null) s.phone!,
+                    s.active ? l10n.statusActive : l10n.statusDisabled,
+                    if (profiles != null)
+                      profiles.shops.containsKey(s.id)
+                          ? l10n.printUsesOwnSetup
+                          : l10n.printUsesFranchiseDefault,
+                  ].join(' · ')),
+                  onTap: isAdmin ? () => _edit(context, ref, s) : null,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _printSetupButton(context, () => _printSetup(context, ref, s)),
+                      if (isAdmin) ...[
+                        const SizedBox(width: 8),
+                        Switch(value: s.active, onChanged: (_) => _toggle(context, ref, s)),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

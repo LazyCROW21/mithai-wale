@@ -10,6 +10,7 @@ import '../home_providers.dart';
 import '../widgets/home_kpi_card.dart';
 import '../widgets/menu_items_to_build_card.dart';
 import '../widgets/order_highlight_section.dart';
+import '../../../core/widgets/refresh_button.dart';
 
 class HomeTabletView extends ConsumerWidget {
   const HomeTabletView({super.key});
@@ -55,9 +56,7 @@ class HomeTabletView extends ConsumerWidget {
         actions: [
           const ShopFilterButton(),
           const AccountMenuButton(),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh Data',
+          RefreshButton(
             onPressed: () => ref.read(homeViewModelProvider.notifier).refreshDashboard(),
           ),
           const SizedBox(width: 8),

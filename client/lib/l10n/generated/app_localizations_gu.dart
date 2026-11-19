@@ -671,4 +671,118 @@ class AppLocalizationsGu extends AppLocalizations {
 
   @override
   String get homeItemsToBuildTodayDesc => 'આજે બનાવવાની કુલ અલગ વસ્તુઓ';
+
+  @override
+  String get actionRefresh => 'રિફ્રેશ કરો';
+
+  @override
+  String get actionPrint => 'પ્રિન્ટ કરો';
+
+  @override
+  String get printBill => 'બિલ (PDF)';
+
+  @override
+  String get printPreviewTitle => 'પ્રિન્ટ પ્રિવ્યૂ';
+
+  @override
+  String get printFormatPage => 'પેજ';
+
+  @override
+  String get printFormatThermal80 => 'રોલ 80mm';
+
+  @override
+  String get printFormatThermal58 => 'રોલ 58mm';
+
+  @override
+  String get printLetterhead => 'લેટરહેડ';
+
+  @override
+  String get printLetterheadHint =>
+      'હેડર ચિત્ર ઉપરના માર્જિનમાં અને ફૂટર ચિત્ર નીચેના માર્જિનમાં છપાય છે. પહેલેથી છાપેલા કાગળ પર પ્રિન્ટ કરતી વખતે પ્રિવ્યૂમાં લેટરહેડ બંધ કરો.';
+
+  @override
+  String get printShareDownload => 'શેર / ડાઉનલોડ';
+
+  @override
+  String get printFailed => 'દસ્તાવેજ બનાવી શકાયો નથી. ફરી પ્રયાસ કરો.';
+
+  @override
+  String get printSetup => 'પ્રિન્ટ સેટઅપ';
+
+  @override
+  String get printSetupFranchise => 'ફ્રેન્ચાઇઝ પ્રિન્ટ સેટઅપ';
+
+  @override
+  String get printSetupFranchiseDesc =>
+      'જે દુકાનનું પોતાનું પ્રિન્ટ સેટઅપ નથી તે દરેક દુકાન માટે વપરાય છે';
+
+  @override
+  String get printUsesFranchiseDefault =>
+      'ફ્રેન્ચાઇઝનું પ્રિન્ટ સેટઅપ વપરાય છે';
+
+  @override
+  String get printUsesOwnSetup => 'પોતાનું પ્રિન્ટ સેટઅપ';
+
+  @override
+  String get printUseFranchiseDefault => 'ફ્રેન્ચાઇઝ સેટઅપ વાપરો';
+
+  @override
+  String get printPageSize => 'પેજનું માપ';
+
+  @override
+  String get printPageCustom => 'કસ્ટમ માપ';
+
+  @override
+  String get printPageWidth => 'પહોળાઈ';
+
+  @override
+  String get printPageHeight => 'ઊંચાઈ';
+
+  @override
+  String get printArea => 'પ્રિન્ટિંગ વિસ્તાર';
+
+  @override
+  String get printAreaHint =>
+      'પેજની દરેક કિનારીથી માર્જિન. દસ્તાવેજનું કંઈ પણ તેની બહાર છપાતું નથી.';
+
+  @override
+  String get printAreaTooSmall =>
+      'માર્જિનને કારણે પ્રિન્ટ માટે જગ્યા રહેતી નથી. માર્જિન ઘટાડો અથવા મોટું પેજ વાપરો.';
+
+  @override
+  String get printMarginTop => 'ઉપરનું માર્જિન';
+
+  @override
+  String get printMarginBottom => 'નીચેનું માર્જિન';
+
+  @override
+  String get printMarginLeft => 'ડાબું માર્જિન';
+
+  @override
+  String get printMarginRight => 'જમણું માર્જિન';
+
+  @override
+  String get printHeaderImage => 'હેડર ચિત્ર';
+
+  @override
+  String get printFooterImage => 'ફૂટર ચિત્ર (વૈકલ્પિક)';
+
+  @override
+  String get printImageChoose => 'ચિત્ર પસંદ કરો';
+
+  @override
+  String get printImageRemove => 'દૂર કરો';
+
+  @override
+  String get printImageTooLarge =>
+      'આ ચિત્ર બહુ મોટું છે. નાનું ચિત્ર પસંદ કરો.';
+
+  @override
+  String get printInvalidNumber => 'માન્ય સંખ્યા લખો';
+
+  @override
+  String get printPreviewSample => 'પ્રિવ્યૂ';
+
+  @override
+  String get printSetupSaved => 'પ્રિન્ટ સેટઅપ સેવ થયું';
 }

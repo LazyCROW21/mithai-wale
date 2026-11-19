@@ -10,10 +10,14 @@ class ImageUtils {
   /// Picks an image from the specified [source] (gallery or camera),
   /// resizes it so its maximum dimension is at most [maxDimension] pixels (default 512x512 max),
   /// and compresses it into an efficient JPEG format for local storage.
+  ///
+  /// JPEG has no transparency: set [whiteBackground] to place transparent
+  /// images (e.g. a PNG letterhead) on white instead of black.
   static Future<Uint8List?> pickAndCompressImage({
     ImageSource source = ImageSource.gallery,
     int maxDimension = 512,
     int quality = 65,
+    bool whiteBackground = false,
   }) async {
     try {
       final XFile? file = await _picker.pickImage(
@@ -29,6 +33,7 @@ class ImageUtils {
         rawBytes,
         maxDimension: maxDimension,
         quality: quality,
+        whiteBackground: whiteBackground,
       );
     } catch (e) {
       if (kDebugMode) {
@@ -44,6 +49,7 @@ class ImageUtils {
     Uint8List rawBytes, {
     int maxDimension = 512,
     int quality = 65,
+    bool whiteBackground = false,
   }) async {
     return compute(
       _compressWorker,
@@ -51,6 +57,7 @@ class ImageUtils {
         rawBytes: rawBytes,
         maxDimension: maxDimension,
         quality: quality,
+        whiteBackground: whiteBackground,
       ),
     );
   }
@@ -61,11 +68,13 @@ class _CompressParams {
     required this.rawBytes,
     required this.maxDimension,
     required this.quality,
+    this.whiteBackground = false,
   });
 
   final Uint8List rawBytes;
   final int maxDimension;
   final int quality;
+  final bool whiteBackground;
 }
 
 Uint8List? _compressWorker(_CompressParams params) {
@@ -91,6 +100,12 @@ Uint8List? _compressWorker(_CompressParams params) {
           interpolation: img.Interpolation.linear,
         );
       }
+    }
+
+    if (params.whiteBackground && processed.hasAlpha) {
+      final canvas = img.Image(width: processed.width, height: processed.height)
+        ..clear(img.ColorRgb8(255, 255, 255));
+      processed = img.compositeImage(canvas, processed);
     }
 
     // Encode to efficient JPEG format (quality 65 achieves small byte size)
