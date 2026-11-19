@@ -1,9 +1,18 @@
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1'
-const KEY = 'mithai_admin_tokens'
+const KEY = 'mithai_admin_session'
 
-export interface Tokens {
+/** Fired when the super admin session ends (expired or rejected by the server). */
+export const SESSION_EXPIRED_EVENT = 'admin-session-expired'
+
+/**
+ * Super admin session: a short-lived access token (default 5 min) with no refresh
+ * token — the admin signs in again when it expires. Kept in sessionStorage so it
+ * is scoped to the tab and gone when the tab closes.
+ */
+export interface Session {
   accessToken: string
-  refreshToken: string
+  /** epoch ms */
+  expiresAt: number
 }
 
 export interface Tenant {
@@ -28,22 +37,28 @@ export class ApiError extends Error {
   }
 }
 
-export const tokens = {
-  get(): Tokens | null {
+export const session = {
+  get(): Session | null {
     try {
-      return JSON.parse(localStorage.getItem(KEY) ?? 'null')
+      const s: Session | null = JSON.parse(sessionStorage.getItem(KEY) ?? 'null')
+      return s && s.expiresAt > Date.now() ? s : null
     } catch {
       return null
     }
   },
-  set(t: Tokens | null) {
+  set(s: Session | null) {
     try {
-      if (t) localStorage.setItem(KEY, JSON.stringify(t))
-      else localStorage.removeItem(KEY)
+      if (s) sessionStorage.setItem(KEY, JSON.stringify(s))
+      else sessionStorage.removeItem(KEY)
     } catch {
       /* storage unavailable */
     }
   },
+}
+
+function expire() {
+  session.set(null)
+  window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))
 }
 
 async function raw(path: string, init: RequestInit, access?: string): Promise<Response> {
@@ -56,25 +71,16 @@ async function raw(path: string, init: RequestInit, access?: string): Promise<Re
   })
 }
 
-async function refresh(): Promise<boolean> {
-  const t = tokens.get()
-  if (!t) return false
-  const res = await raw('/auth/refresh', {
-    method: 'POST',
-    body: JSON.stringify({ refreshToken: t.refreshToken }),
-  })
-  if (!res.ok) {
-    tokens.set(null)
-    return false
-  }
-  tokens.set(await res.json())
-  return true
-}
-
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  let res = await raw(path, init, tokens.get()?.accessToken)
-  if (res.status === 401 && (await refresh())) {
-    res = await raw(path, init, tokens.get()?.accessToken)
+  const s = session.get()
+  if (!s) {
+    expire()
+    throw new ApiError(401, 'Session expired')
+  }
+  const res = await raw(path, init, s.accessToken)
+  if (res.status === 401) {
+    expire()
+    throw new ApiError(401, 'Session expired')
   }
   if (!res.ok) {
     const body = await res.json().catch(() => null)
@@ -91,10 +97,10 @@ export const api = {
     })
     const body = await res.json().catch(() => null)
     if (!res.ok) throw new ApiError(res.status, body?.error?.message ?? 'Login failed')
-    tokens.set({ accessToken: body.accessToken, refreshToken: body.refreshToken })
+    session.set({ accessToken: body.accessToken, expiresAt: Date.now() + body.expiresIn * 1000 })
   },
   logout() {
-    tokens.set(null)
+    session.set(null)
   },
   listTenants: () => request<Tenant[]>('/admin/tenants'),
   createTenant: (input: CreateTenantInput) =>

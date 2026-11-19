@@ -16,9 +16,12 @@ export interface TenantDoc extends Base {
   deletedAt?: Date | null;
 }
 
-export interface Admin extends Base {
-  username: string;
-  passwordHash: string;
+/** Failed-login counter for brute-force protection; expires via TTL index. */
+export interface LoginAttempt {
+  /** `<scope>:<client ip>` */
+  _id: string;
+  count: number;
+  expiresAt: Date;
 }
 
 export interface Tenant extends Base {

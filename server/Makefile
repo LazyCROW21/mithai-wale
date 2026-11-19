@@ -1,6 +1,6 @@
 COMPOSE := docker compose
 
-.PHONY: help up down restart build logs ps seed shell mongo-shell reset-data
+.PHONY: help up down restart build logs ps indexes shell mongo-shell reset-data
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
@@ -24,8 +24,8 @@ logs: ## Tail API logs
 ps: ## Show container status
 	$(COMPOSE) ps
 
-seed: ## Create/update the platform admin inside the API container
-	$(COMPOSE) exec api bun run seed:admin
+indexes: ## Ensure MongoDB indexes inside the API container
+	$(COMPOSE) exec api bun run db:indexes
 
 shell: ## Open a shell in the API container
 	$(COMPOSE) exec api sh

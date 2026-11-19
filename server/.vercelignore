@@ -1,0 +1,10 @@
+# Never upload local secrets — production env vars live in Vercel project settings.
+.env
+.env.*
+!.env.example
+
+node_modules
+Dockerfile
+docker-compose.yml
+.dockerignore
+Makefile

@@ -3,12 +3,22 @@ import { z } from "zod";
 import { collection } from "../db/mongo";
 import { Collections } from "../db/collections";
 import { hashPassword, publicUser, verifyPassword } from "../lib/password";
-import { unauthorized } from "../lib/errors";
+import { unauthorized, unavailable } from "../lib/errors";
 import { parseBody } from "../lib/validate";
 import { consumeRefreshToken, issueTokens, revokeRefreshToken } from "../auth/tokens";
+import {
+  assertNotLocked,
+  checkSuperadmin,
+  clearFailures,
+  clientIp,
+  issueSuperadminToken,
+  recordFailure,
+  superadminConfigured,
+} from "../auth/superadmin";
+import { env } from "../config/env";
 import { authenticate } from "../middleware/auth";
 import { rolePermissions } from "../auth/permissions";
-import type { Admin, AppEnv, Shop, Tenant, User } from "../types/models";
+import type { AppEnv, Shop, Tenant, User } from "../types/models";
 
 /** What the client needs to render the right navigation and scope its lists. */
 async function buildSession(user: User, tenant: Tenant) {
@@ -66,7 +76,8 @@ export const authRouter = new Hono<AppEnv>()
   .post("/refresh", async (c) => {
     const { refreshToken } = await parseBody(c, refreshSchema);
     const stored = await consumeRefreshToken(refreshToken);
-    if (!stored) throw unauthorized("Invalid refresh token");
+    // Super admin sessions are not refreshable; only tenant users get refresh tokens.
+    if (!stored || stored.kind !== "user") throw unauthorized("Invalid refresh token");
     return c.json(await issueTokens(stored.kind, stored.subjectId));
   })
   .post("/logout", async (c) => {
@@ -77,8 +88,7 @@ export const authRouter = new Hono<AppEnv>()
   .get("/me", authenticate, async (c) => {
     const p = c.get("principal");
     if (p.kind === "admin") {
-      const admin = await collection<Admin>(Collections.admins).findOne({ _id: p.id });
-      return c.json({ kind: "admin", user: admin && publicUser(admin) });
+      return c.json({ kind: "admin", user: { username: env.SUPERADMIN_USERNAME } });
     }
     const user = await collection<User>(Collections.users).findOne({ _id: p.id });
     const tenant = user && (await collection<Tenant>(Collections.tenants).findOne({ _id: user.tenantId }));
@@ -86,10 +96,16 @@ export const authRouter = new Hono<AppEnv>()
     return c.json({ kind: "user", ...(await buildSession(user, tenant)) });
   });
 
+/** Super admin login: static credentials → short-lived access token, no refresh token. */
 export const adminAuthRouter = new Hono<AppEnv>().post("/login", async (c) => {
+  if (!superadminConfigured()) throw unavailable("Admin login is not configured");
   const { username, password } = await parseBody(c, adminLoginSchema);
-  const admin = await collection<Admin>(Collections.admins).findOne({ username });
-  const ok = await checkPassword(password, admin?.passwordHash);
-  if (!admin || !ok) throw unauthorized("Invalid credentials");
-  return c.json({ ...(await issueTokens("admin", admin._id)), user: publicUser(admin) });
+  const key = `superadmin:${clientIp(c)}`;
+  await assertNotLocked(key);
+  if (!checkSuperadmin(username, password)) {
+    await recordFailure(key);
+    throw unauthorized("Invalid credentials");
+  }
+  await clearFailures(key);
+  return c.json({ ...(await issueSuperadminToken()), user: { username } });
 });

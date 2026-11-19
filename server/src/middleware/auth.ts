@@ -2,9 +2,10 @@ import type { Context, MiddlewareHandler } from "hono";
 import { collection } from "../db/mongo";
 import { Collections } from "../db/collections";
 import { verifyAccessToken } from "../auth/tokens";
+import { SUPERADMIN_SUBJECT, superadminConfigured } from "../auth/superadmin";
 import { can, type Permission } from "../auth/permissions";
 import { forbidden, unauthorized } from "../lib/errors";
-import type { Admin, AppEnv, Principal, Role, Shop, Tenant, User } from "../types/models";
+import type { AppEnv, Principal, Role, Shop, Tenant, User } from "../types/models";
 
 /** Verifies the bearer token, then loads the subject fresh so revocations/role changes apply immediately. */
 export const authenticate: MiddlewareHandler<AppEnv> = async (c, next) => {
@@ -20,9 +21,9 @@ export const authenticate: MiddlewareHandler<AppEnv> = async (c, next) => {
 
   let principal: Principal;
   if (claims.kind === "admin") {
-    const admin = await collection<Admin>(Collections.admins).findOne({ _id: claims.sub });
-    if (!admin) throw unauthorized();
-    principal = { kind: "admin", id: admin._id };
+    // Static super admin: no DB record. Disabling the env credentials locks admins out.
+    if (claims.sub !== SUPERADMIN_SUBJECT || !superadminConfigured()) throw unauthorized();
+    principal = { kind: "admin", id: claims.sub };
   } else {
     const user = await collection<User>(Collections.users).findOne({ _id: claims.sub });
     if (!user || !user.active) throw unauthorized();

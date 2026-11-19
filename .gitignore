@@ -1,0 +1,3 @@
+# deploy tooling state (project links, caches)
+.vercel/
+.wrangler/

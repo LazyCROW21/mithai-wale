@@ -1,8 +1,27 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { api, tokens, type Tenant } from './api'
+import { api, session, SESSION_EXPIRED_EVENT, type Tenant } from './api'
 import './App.css'
 
-function Login({ onDone }: { onDone: () => void }) {
+/** mm:ss until the session token expires; ends the session at zero. */
+function SessionTimer({ onExpire }: { onExpire: () => void }) {
+  const [left, setLeft] = useState(() => Math.max(0, (session.get()?.expiresAt ?? 0) - Date.now()))
+  useEffect(() => {
+    const id = setInterval(() => {
+      const ms = Math.max(0, (session.get()?.expiresAt ?? 0) - Date.now())
+      setLeft(ms)
+      if (ms === 0) onExpire()
+    }, 1000)
+    return () => clearInterval(id)
+  }, [onExpire])
+  const s = Math.ceil(left / 1000)
+  return (
+    <span className="muted" title="Session time left">
+      {Math.floor(s / 60)}:{String(s % 60).padStart(2, '0')}
+    </span>
+  )
+}
+
+function Login({ onDone, notice }: { onDone: () => void; notice?: string }) {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -32,13 +51,14 @@ function Login({ onDone }: { onDone: () => void }) {
         Password
         <input name="password" type="password" required />
       </label>
+      {notice && !error && <p className="muted">{notice}</p>}
       {error && <p className="error">{error}</p>}
       <button disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
     </form>
   )
 }
 
-function Tenants({ onLogout }: { onLogout: () => void }) {
+function Tenants({ onLogout, onExpire }: { onLogout: () => void; onExpire: () => void }) {
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [error, setError] = useState('')
   const [showForm, setShowForm] = useState(false)
@@ -99,6 +119,7 @@ function Tenants({ onLogout }: { onLogout: () => void }) {
       <header>
         <h1>Tenants</h1>
         <div className="row">
+          <SessionTimer onExpire={onExpire} />
           <button onClick={() => setShowForm((v) => !v)}>{showForm ? 'Cancel' : 'New tenant'}</button>
           <button onClick={onLogout}>Sign out</button>
         </div>
@@ -138,15 +159,36 @@ function Tenants({ onLogout }: { onLogout: () => void }) {
 }
 
 export default function App() {
-  const [authed, setAuthed] = useState(() => tokens.get() !== null)
+  const [authed, setAuthed] = useState(() => session.get() !== null)
+  const [notice, setNotice] = useState('')
+
+  const expire = useCallback(() => {
+    api.logout()
+    setAuthed(false)
+    setNotice('Session expired. Please sign in again.')
+  }, [])
+
+  useEffect(() => {
+    window.addEventListener(SESSION_EXPIRED_EVENT, expire)
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, expire)
+  }, [expire])
+
   return authed ? (
     <Tenants
+      onExpire={expire}
       onLogout={() => {
         api.logout()
         setAuthed(false)
+        setNotice('')
       }}
     />
   ) : (
-    <Login onDone={() => setAuthed(true)} />
+    <Login
+      notice={notice}
+      onDone={() => {
+        setNotice('')
+        setAuthed(true)
+      }}
+    />
   )
 }

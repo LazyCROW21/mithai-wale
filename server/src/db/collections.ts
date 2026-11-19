@@ -1,6 +1,6 @@
 /** Central registry of collection names. */
 export const Collections = {
-  admins: "admins",
+  loginAttempts: "login_attempts",
   tenants: "tenants",
   users: "users",
   refreshTokens: "refresh_tokens",

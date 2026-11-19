@@ -5,7 +5,7 @@ export async function ensureIndexes(): Promise<void> {
   // Sync cursor index on every pulled collection: (tenant, updatedAt, _id).
   const pulled = [...SoftDeleteCollections, C.shops];
   await Promise.all([
-    collection(C.admins).createIndex({ username: 1 }, { unique: true }),
+    collection(C.loginAttempts).createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
     collection(C.tenants).createIndex({ slug: 1 }, { unique: true }),
     collection(C.users).createIndex({ tenantId: 1, username: 1 }, { unique: true }),
     collection(C.refreshTokens).createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
