@@ -1,0 +1,11 @@
+{
+  "name": "mithai-wale-workspace",
+  "private": true,
+  "scripts": {
+    "deploy:api": "bun scripts/deploy-api.ts",
+    "build:app": "bun scripts/build-app.ts",
+    "deploy:app": "bun scripts/deploy-app.ts",
+    "build:admin": "bun scripts/build-admin.ts",
+    "deploy:admin": "bun scripts/deploy-admin.ts"
+  }
+}

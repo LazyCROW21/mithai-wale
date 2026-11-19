@@ -1,0 +1,14 @@
+{
+  "$comment": "Public deploy settings (no secrets). Secrets live in Vercel / Cloudflare project settings. API_URL env var overrides api.url for a single build.",
+  "api": {
+    "url": "https://mithai-wale-api.vercel.app"
+  },
+  "app": {
+    "cloudflareProject": "mithai-wale-app",
+    "url": "https://mithai-wale-app.pages.dev"
+  },
+  "admin": {
+    "cloudflareProject": "mithai-wale-admin",
+    "url": "https://mithai-wale-admin.pages.dev"
+  }
+}

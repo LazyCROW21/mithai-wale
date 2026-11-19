@@ -1,0 +1,38 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: mithai-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-mithai}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-mithai_secret}
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: mithai-api
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      # inside the compose network Mongo is reachable by service name
+      MONGO_URI: mongodb://${MONGO_USER:-mithai}:${MONGO_PASSWORD:-mithai_secret}@mongo:27017/?authSource=admin
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      - ./:/app # live source reload via `bun --watch`
+      - api_node_modules:/app/node_modules # keep the container's deps, not the host's
+
+volumes:
+  mongo_data:
+  api_node_modules:
